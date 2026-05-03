@@ -25,6 +25,7 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.material.button.MaterialButton;
+import androidx.core.content.ContextCompat;
 
 public class TravelActivity extends AppCompatActivity implements OnMapReadyCallback {
 
@@ -154,7 +155,13 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     protected void onResume() {
         super.onResume();
-        registerReceiver(uiUpdateReceiver, new IntentFilter("UPDATE_UI_BROADCAST"));
+        // FIX: Safely register the receiver and block outside apps from listening
+        ContextCompat.registerReceiver(
+                this,
+                uiUpdateReceiver,
+                new IntentFilter("UPDATE_UI_BROADCAST"),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+        );
         updateScreenFromService(); // Catch up on any math that happened while screen was off
     }
 

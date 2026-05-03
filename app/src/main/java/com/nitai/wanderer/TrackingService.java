@@ -7,6 +7,7 @@ import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.content.pm.ServiceInfo;
 import android.location.Location;
 import android.os.Build;
 import android.os.Handler;
@@ -17,6 +18,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
+import androidx.core.app.ServiceCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -31,7 +33,6 @@ import java.util.ArrayList;
 public class TrackingService extends Service {
 
     // --- GLOBAL TRACKING VARIABLES ---
-    // We make these 'public static' so the TravelActivity can easily read them to update the screen
     public static ArrayList<LatLng> livePath = new ArrayList<>();
     public static float liveDistanceInMeters = 0f;
     public static int liveSecondsElapsed = 0;
@@ -49,7 +50,6 @@ public class TrackingService extends Service {
         setupLocationCallback();
     }
 
-    // This runs the moment TravelActivity tells the service to start
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (!isServiceRunning) {
@@ -60,14 +60,18 @@ public class TrackingService extends Service {
             liveSecondsElapsed = 0;
             lastKnownLocation = null;
 
-            // 1. Start the sticky notification so Android doesn't kill us
-            startForeground(1, createNotification());
+            // Safe Foreground Service start for Android 14+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ServiceCompat.startForeground(this, 1, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
+            } else {
+                startForeground(1, createNotification());
+            }
 
-            // 2. Start the GPS and Timer
+            // Start the GPS and Timer
             startLocationUpdates();
             startTimer();
         }
-        return START_STICKY; // Tells Android to restart the service if it crashes
+        return START_STICKY;
     }
 
     // --- THE STICKY NOTIFICATION ---
@@ -75,14 +79,12 @@ public class TrackingService extends Service {
         String channelId = "walk_tracker_channel";
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
 
-        // Modern Android requires a "Channel" for notifications
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationChannel channel = new NotificationChannel(
                     channelId, "Walk Tracker", NotificationManager.IMPORTANCE_LOW);
             notificationManager.createNotificationChannel(channel);
         }
 
-        // If the user taps the notification, open TravelActivity
         Intent notificationIntent = new Intent(this, TravelActivity.class);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
@@ -91,7 +93,7 @@ public class TrackingService extends Service {
                 .setContentText("Keep up the good pace!")
                 .setSmallIcon(android.R.drawable.ic_menu_mylocation)
                 .setContentIntent(pendingIntent)
-                .setOngoing(true) // Makes it sticky (cannot be swiped away)
+                .setOngoing(true)
                 .build();
     }
 
@@ -112,15 +114,15 @@ public class TrackingService extends Service {
             public void onLocationResult(@NonNull LocationResult locationResult) {
                 for (Location location : locationResult.getLocations()) {
                     LatLng currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
-                    livePath.add(currentLatLng); // Add to the backpack
+                    livePath.add(currentLatLng);
 
                     if (lastKnownLocation != null) {
                         liveDistanceInMeters += lastKnownLocation.distanceTo(location);
                     }
                     lastKnownLocation = location;
 
-                    // Send a radio broadcast to TravelActivity saying "Hey, the screen needs to update!"
-                    sendBroadcast(new Intent("UPDATE_UI_BROADCAST"));
+                    // Send the explicit, safe radio broadcast
+                    sendUpdateBroadcast();
                 }
             }
         };
@@ -133,11 +135,22 @@ public class TrackingService extends Service {
             public void run() {
                 if (isServiceRunning) {
                     liveSecondsElapsed++;
-                    sendBroadcast(new Intent("UPDATE_UI_BROADCAST")); // Update screen every second
+
+                    // Send the explicit, safe radio broadcast
+                    sendUpdateBroadcast();
+
                     timerHandler.postDelayed(this, 1000);
                 }
             }
         }, 1000);
+    }
+
+    // --- THE FIX: EXPLICIT BROADCASTER ---
+    // This helper attaches your app's specific package name to the message so Android 14 doesn't block it.
+    private void sendUpdateBroadcast() {
+        Intent intent = new Intent("UPDATE_UI_BROADCAST");
+        intent.setPackage(getPackageName()); // <--- The magic delivery address
+        sendBroadcast(intent);
     }
 
     // --- CLEANUP ---
