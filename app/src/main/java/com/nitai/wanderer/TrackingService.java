@@ -32,7 +32,6 @@ import java.util.ArrayList;
 
 public class TrackingService extends Service {
 
-    // --- GLOBAL TRACKING VARIABLES ---
     public static ArrayList<LatLng> livePath = new ArrayList<>();
     public static float liveDistanceInMeters = 0f;
     public static int liveSecondsElapsed = 0;
@@ -54,34 +53,29 @@ public class TrackingService extends Service {
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (!isServiceRunning) {
             isServiceRunning = true;
-            // Clear old data in case of a new walk
             livePath.clear();
             liveDistanceInMeters = 0f;
             liveSecondsElapsed = 0;
             lastKnownLocation = null;
 
-            // Safe Foreground Service start for Android 14+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 ServiceCompat.startForeground(this, 1, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
             } else {
                 startForeground(1, createNotification());
             }
 
-            // Start the GPS and Timer
             startLocationUpdates();
             startTimer();
         }
         return START_STICKY;
     }
 
-    // --- THE STICKY NOTIFICATION ---
     private Notification createNotification() {
         String channelId = "walk_tracker_channel";
         NotificationManager notificationManager = getSystemService(NotificationManager.class);
 
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    channelId, "Walk Tracker", NotificationManager.IMPORTANCE_LOW);
+            NotificationChannel channel = new NotificationChannel(channelId, "Walk Tracker", NotificationManager.IMPORTANCE_LOW);
             notificationManager.createNotificationChannel(channel);
         }
 
@@ -89,22 +83,17 @@ public class TrackingService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
 
         return new NotificationCompat.Builder(this, channelId)
-                .setContentTitle("Wanderer is tracking your walk")
-                .setContentText("Keep up the good pace!")
+                .setContentTitle("Wanderer")
+                .setContentText("Tracking your walk in the background...")
                 .setSmallIcon(android.R.drawable.ic_menu_mylocation)
                 .setContentIntent(pendingIntent)
                 .setOngoing(true)
                 .build();
     }
 
-    // --- GPS ENGINE ---
     private void startLocationUpdates() {
         if (ActivityCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) return;
-
-        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000)
-                .setMinUpdateIntervalMillis(2000)
-                .build();
-
+        LocationRequest locationRequest = new LocationRequest.Builder(Priority.PRIORITY_HIGH_ACCURACY, 3000).setMinUpdateIntervalMillis(2000).build();
         fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper());
     }
 
@@ -120,40 +109,31 @@ public class TrackingService extends Service {
                         liveDistanceInMeters += lastKnownLocation.distanceTo(location);
                     }
                     lastKnownLocation = location;
-
-                    // Send the explicit, safe radio broadcast
                     sendUpdateBroadcast();
                 }
             }
         };
     }
 
-    // --- TIMER ENGINE ---
     private void startTimer() {
         timerHandler.postDelayed(new Runnable() {
             @Override
             public void run() {
                 if (isServiceRunning) {
                     liveSecondsElapsed++;
-
-                    // Send the explicit, safe radio broadcast
                     sendUpdateBroadcast();
-
                     timerHandler.postDelayed(this, 1000);
                 }
             }
         }, 1000);
     }
 
-    // --- THE FIX: EXPLICIT BROADCASTER ---
-    // This helper attaches your app's specific package name to the message so Android 14 doesn't block it.
     private void sendUpdateBroadcast() {
         Intent intent = new Intent("UPDATE_UI_BROADCAST");
-        intent.setPackage(getPackageName()); // <--- The magic delivery address
+        intent.setPackage(getPackageName());
         sendBroadcast(intent);
     }
 
-    // --- CLEANUP ---
     @Override
     public void onDestroy() {
         super.onDestroy();

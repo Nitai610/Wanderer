@@ -28,17 +28,34 @@
         android:orientation="vertical"
         app:layout_constraintTop_toBottomOf="@id/tvSettingsTitle">
 
+
+
+        <!-- NEW: TEST NOTIFICATION BUTTON -->
+
         <!-- NEW: CLEAR HISTORY BUTTON -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnTestNotification"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginBottom="16dp"
+            android:text="TEST NOTIFICATION"
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="#1E104E"
+            app:cornerRadius="16dp"
+            app:elevation="2dp" />
+
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnClearHistory"
             android:layout_width="match_parent"
             android:layout_height="64dp"
             android:layout_marginBottom="16dp"
             android:text="CLEAR JOURNAL HISTORY"
-            android:textColor="#EF5350"
+            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:backgroundTint="#FFFFFF"
+            app:backgroundTint="#EF5350"
             app:cornerRadius="16dp"
             app:elevation="2dp"
             app:strokeColor="#EF5350"
