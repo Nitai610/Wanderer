@@ -53,7 +53,7 @@
             android:textColor="#EF5350"
             android:textSize="16sp"
             android:textStyle="bold"
-            app:backgroundTint="#1a181b"
+            app:backgroundTint="#FFFFFF"
             app:cornerRadius="16dp"
             app:elevation="2dp"
             app:strokeColor="#EF5350"

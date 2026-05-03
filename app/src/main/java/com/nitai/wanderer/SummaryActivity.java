@@ -1,7 +1,5 @@
-package com.nitai.wanderer; // Make sure this matches your package name!
+package com.nitai.wanderer;
 
-// --- IMPORT SECTION ---
-// These are all the tools Android needs to draw maps, format text, and save data.
 import android.content.Intent;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -30,11 +28,11 @@ import java.util.Locale;
 
 public class SummaryActivity extends AppCompatActivity {
 
-    // --- VARIABLE DECLARATIONS ---
+    // Declare all UI Elements
     TextView tvFinalDistance, tvFinalTime;
-    MaterialButton btnSaveWalk, btnDiscardWalk;
+    MaterialButton btnSaveWalk, btnDiscardWalk, btnSummaryBack;
 
-    // We create variables to hold the incoming data so the whole file can see them
+    // Variables to hold the data being displayed
     String finalDistance;
     String finalTime;
     ArrayList<LatLng> walkPath;
@@ -44,7 +42,7 @@ public class SummaryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         // --- IMMERSIVE MODE ---
-        // Hides the phone's top and bottom bars so your app looks like a professional full-screen game.
+        // Hides status bars for a clean, full-screen look
         WindowInsetsControllerCompat windowInsetsController =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         windowInsetsController.setSystemBarsBehavior(
@@ -54,97 +52,120 @@ public class SummaryActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_summary);
 
-        // --- 1. CONNECT UI TO XML ---
+        // Connect UI variables to XML IDs
         tvFinalDistance = findViewById(R.id.tvFinalDistance);
         tvFinalTime = findViewById(R.id.tvFinalTime);
         btnSaveWalk = findViewById(R.id.btnSaveWalk);
         btnDiscardWalk = findViewById(R.id.btnDiscardWalk);
+        btnSummaryBack = findViewById(R.id.btnSummaryBack); // The new "Go Back" button
 
-        // --- 2. CATCH THE INCOMING DATA ---
-        // This acts like a mailbox. It opens the "Intent" sent by the TravelActivity
-        // and pulls out the distance, time, and the massive list of GPS coordinates.
-        finalDistance = getIntent().getStringExtra("FINAL_DISTANCE");
-        finalTime = getIntent().getStringExtra("FINAL_TIME");
-        walkPath = getIntent().getParcelableArrayListExtra("PATH_POINTS");
+        // --- SMART LOADING LOGIC ---
+        // We look inside the "Intent" mailbox to see if the Journal passed us an index number.
+        // If nothing was passed, it returns -1.
+        int oldWalkIndex = getIntent().getIntExtra("OLD_WALK_INDEX", -1);
 
-        // Put the distance and time onto the screen so the user can see them
+        if (oldWalkIndex != -1) {
+            // SCENARIO 1: VIEWING AN OLD WALK FROM THE JOURNAL
+
+            // Go into the master list and grab the walk at this specific index
+            Walk oldWalk = Walk.walkHistory.get(oldWalkIndex);
+
+            // Extract the data from that old walk
+            finalDistance = oldWalk.distance;
+            finalTime = oldWalk.time;
+            walkPath = oldWalk.path;
+
+            // Hide the Save and Discard buttons, because this walk is already saved
+            btnSaveWalk.setVisibility(View.GONE);
+            btnDiscardWalk.setVisibility(View.GONE);
+            // Show the "Go Back" button instead
+            btnSummaryBack.setVisibility(View.VISIBLE);
+
+        } else {
+            // SCENARIO 2: JUST FINISHED A BRAND NEW WALK
+
+            // Extract the live data passed directly from the TravelActivity
+            finalDistance = getIntent().getStringExtra("FINAL_DISTANCE");
+            finalTime = getIntent().getStringExtra("FINAL_TIME");
+            walkPath = getIntent().getParcelableArrayListExtra("PATH_POINTS");
+
+            // Ensure the Save and Discard buttons are visible
+            btnSaveWalk.setVisibility(View.VISIBLE);
+            btnDiscardWalk.setVisibility(View.VISIBLE);
+            // Ensure the "Go Back" button remains hidden
+            btnSummaryBack.setVisibility(View.GONE);
+        }
+
+        // Put the distance and time onto the screen
         tvFinalDistance.setText(finalDistance);
         tvFinalTime.setText(finalTime);
 
-        // --- 3. BOOT UP THE GOOGLE MAP ---
-        // Find the empty map window we built in the XML design and wake it up
+        // --- BOOT UP THE GOOGLE MAP ---
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.summaryMap);
 
         if (mapFragment != null) {
-            // This tells Google Maps to start loading in the background.
-            // When it is fully loaded and ready, it will trigger the 'onMapReady' method below.
             mapFragment.getMapAsync(new OnMapReadyCallback() {
                 @Override
                 public void onMapReady(@NonNull GoogleMap googleMap) {
-                    drawRouteOnMap(googleMap); // Call our custom drawing engine!
+                    drawRouteOnMap(googleMap); // Calls the drawing function below
                 }
             });
         }
 
-        // --- 4. DISCARD BUTTON LOGIC ---
-        btnDiscardWalk.setOnClickListener(new View.OnClickListener() {
+        // --- GO BACK BUTTON LOGIC ---
+        btnSummaryBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // If they click Discard, we don't save anything.
-                // We just close this screen, which drops them back to the Main Menu.
-                Toast.makeText(SummaryActivity.this, "Walk Discarded", Toast.LENGTH_SHORT).show();
-                finish();
+                finish(); // Closes the summary screen and drops you safely back in the Journal
             }
         });
 
-        // --- 5. SAVE BUTTON LOGIC ---
+        // --- DISCARD BUTTON LOGIC ---
+        btnDiscardWalk.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Toast.makeText(SummaryActivity.this, "Walk Discarded", Toast.LENGTH_SHORT).show();
+                finish(); // Close without saving
+            }
+        });
+
+        // --- SAVE BUTTON LOGIC ---
         btnSaveWalk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // 1. Figure out what today's date is (e.g., "03/05/2026")
+                // Get today's date
                 String currentDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
 
-                // 2. Create a brand new Walk object with our data
-                Walk completedWalk = new Walk(finalDistance, finalTime, currentDate);
+                // CREATE WALK (Now passing 'walkPath' so the map is saved permanently!)
+                Walk completedWalk = new Walk(finalDistance, finalTime, currentDate, walkPath);
 
-                // 3. Add it to our Journal's memory list
+                // Add to memory and save to phone
                 Walk.walkHistory.add(completedWalk);
-
-                // 4. THE MOST IMPORTANT STEP: Save the updated list to the phone's hard drive!
-                // Because of this line, if you close the app right now, the walk is still saved forever.
                 Walk.saveHistory(SummaryActivity.this);
 
-                // 5. Show a success message
                 Toast.makeText(SummaryActivity.this, "Saved to Journal!", Toast.LENGTH_SHORT).show();
-
-                // 6. Close the Summary screen and return to the Main Menu
                 finish();
             }
         });
     }
 
     // --- THE DRAWING ENGINE ---
-    // This is the code that actually paints the blue line on the Google Map
+    // Takes the list of coordinates and paints them on the map
     private void drawRouteOnMap(GoogleMap googleMap) {
-
-        // Safety check: Only draw the line if the backpack actually has GPS points inside it!
         if (walkPath != null && !walkPath.isEmpty()) {
 
-            // 1. Set up the Paintbrush
-            // A "Polyline" is Google's word for a line drawn between multiple GPS points.
+            // Setup the line styling
             PolylineOptions polylineOptions = new PolylineOptions()
-                    .addAll(walkPath) // Dump all our breadcrumbs onto the map
-                    .color(Color.parseColor("#1976D2")) // Paint it with our App's Theme Blue
-                    .width(12f) // Make the line nice and thick
-                    .geodesic(true); // Makes the line curve slightly to match the curve of the Earth!
+                    .addAll(walkPath) // Dump all the coordinates onto the map
+                    .color(Color.parseColor("#1976D2")) // Blue line
+                    .width(12f) // Thick line
+                    .geodesic(true); // Curve to match the earth
 
-            // 2. Draw the line on the map!
+            // Paint the line
             googleMap.addPolyline(polylineOptions);
 
-            // 3. Move the camera
-            // We tell the camera to instantly fly to the very first GPS point in our list (walkPath.get(0))
-            // The "16f" is the zoom level. (1 is looking at the whole planet, 20 is looking at a single house).
+            // Move and zoom the camera so the user can immediately see the start of the walk
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(walkPath.get(0), 16f));
         }
     }
