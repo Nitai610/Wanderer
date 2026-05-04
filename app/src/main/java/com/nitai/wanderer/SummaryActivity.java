@@ -144,7 +144,8 @@ public class SummaryActivity extends AppCompatActivity {
                 Walk.loadHistory(SummaryActivity.this);
 
                 // Add to memory and save to phone
-                Walk.walkHistory.add(completedWalk);
+                // FIX: By putting a '0' here, we force the new walk to the very front (top) of the list!
+                Walk.walkHistory.add(0, completedWalk);
                 Walk.saveHistory(SummaryActivity.this);
 
                 Toast.makeText(SummaryActivity.this, "Saved to Journal!", Toast.LENGTH_SHORT).show();
