@@ -1,15 +1,9 @@
 package com.nitai.wanderer;
 
-import android.app.Notification;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.content.pm.ServiceInfo;
 import android.location.Location;
-import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
 import android.os.Looper;
@@ -17,8 +11,6 @@ import android.os.Looper;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
-import androidx.core.app.NotificationCompat;
-import androidx.core.app.ServiceCompat;
 
 import com.google.android.gms.location.FusedLocationProviderClient;
 import com.google.android.gms.location.LocationCallback;
@@ -58,37 +50,12 @@ public class TrackingService extends Service {
             liveSecondsElapsed = 0;
             lastKnownLocation = null;
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                ServiceCompat.startForeground(this, 1, createNotification(), ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION);
-            } else {
-                startForeground(1, createNotification());
-            }
-
+            // We no longer call startForeground() here.
+            // It just silently starts doing its job in the background!
             startLocationUpdates();
             startTimer();
         }
-        return START_STICKY;
-    }
-
-    private Notification createNotification() {
-        String channelId = "walk_tracker_channel";
-        NotificationManager notificationManager = getSystemService(NotificationManager.class);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(channelId, "Walk Tracker", NotificationManager.IMPORTANCE_LOW);
-            notificationManager.createNotificationChannel(channel);
-        }
-
-        Intent notificationIntent = new Intent(this, TravelActivity.class);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0, notificationIntent, PendingIntent.FLAG_IMMUTABLE);
-
-        return new NotificationCompat.Builder(this, channelId)
-                .setContentTitle("Wanderer")
-                .setContentText("Tracking your walk in the background...")
-                .setSmallIcon(android.R.drawable.ic_menu_mylocation)
-                .setContentIntent(pendingIntent)
-                .setOngoing(true)
-                .build();
+        return START_STICKY; // Tells Android to keep it running
     }
 
     private void startLocationUpdates() {
