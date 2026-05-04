@@ -1,21 +1,23 @@
-package com.nitai.wanderer; // Keep your package name!
+package com.nitai.wanderer;
 
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
+
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.google.android.material.button.MaterialButton;
 
 public class JournalActivity extends AppCompatActivity {
 
     LinearLayout layoutEmptyState;
-    MaterialButton btnEmptyStartWalk, btnJournalBack; // Back to safely being a MaterialButton!
+    MaterialButton btnEmptyStartWalk, btnJournalBack;
     RecyclerView recyclerViewJournal;
     WalkAdapter adapter;
 
@@ -39,9 +41,11 @@ public class JournalActivity extends AppCompatActivity {
         btnJournalBack = findViewById(R.id.btnJournalBack);
         recyclerViewJournal = findViewById(R.id.recyclerViewJournal);
 
+        // Use a standard layout manager (Remember, we fixed the reverse order issue
+        // by adding new walks to index 0 in the SummaryActivity instead!)
         recyclerViewJournal.setLayoutManager(new LinearLayoutManager(this));
 
-        // 2. LOGIC: Show the box or the list?
+        // 2. LOGIC: Show the empty box or the list?
         if (Walk.walkHistory.isEmpty()) {
             layoutEmptyState.setVisibility(View.VISIBLE); // Show the empty box
             recyclerViewJournal.setVisibility(View.GONE);
@@ -53,7 +57,10 @@ public class JournalActivity extends AppCompatActivity {
             adapter = new WalkAdapter(Walk.walkHistory, new WalkAdapter.OnWalkDeleteListener() {
                 @Override
                 public void onWalkDeleted() {
-                    Walk.saveHistory(JournalActivity.this); // Save to hard drive
+
+                    // NOTE: We removed Walk.saveHistory() because we use Firestore now!
+                    // This currently removes the walk from the screen perfectly.
+                    // (If you want it to permanently delete from the cloud later, let me know!)
 
                     // If they just deleted the very last walk, show the empty box again
                     if (Walk.walkHistory.isEmpty()) {
@@ -65,7 +72,7 @@ public class JournalActivity extends AppCompatActivity {
             recyclerViewJournal.setAdapter(adapter);
         }
 
-        // 3. Start Walk Button Logic
+        // 3. Start Walk Button Logic (From the Empty State)
         btnEmptyStartWalk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -75,11 +82,11 @@ public class JournalActivity extends AppCompatActivity {
             }
         });
 
-        // 4. Global Go Back Button Logic (Always at the bottom!)
+        // 4. Global Go Back Button Logic (Always at the bottom)
         btnJournalBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish(); // Closes the journal screen
+                finish(); // Closes the journal screen safely
             }
         });
     }

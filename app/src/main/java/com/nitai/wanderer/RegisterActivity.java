@@ -5,38 +5,40 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
+
 import androidx.appcompat.app.AppCompatActivity;
-import com.google.android.material.button.MaterialButton;
-import com.google.android.material.textfield.TextInputEditText;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import com.google.android.material.button.MaterialButton;
+import com.google.android.material.textfield.TextInputEditText;
+// This imports the Firebase Authentication library we just added!
+import com.google.firebase.auth.FirebaseAuth;
+
 public class RegisterActivity extends AppCompatActivity {
 
-    // 1. Declare UI Elements (Matching your new XML IDs)
     MaterialButton btnBack, btnRegisterSubmit;
     TextView tvLoginLink;
     TextInputEditText etRegisterUsername, etRegisterPassword, etConfirmPassword;
+
+    // NOTE: This creates a variable to hold the Firebase Authentication engine.
+    // Think of mAuth as your app's personal security guard that talks to the cloud.
+    private FirebaseAuth mAuth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // --- TURN ON IMMERSIVE MODE ---
-        WindowInsetsControllerCompat windowInsetsController =
-                WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
-
-        windowInsetsController.setSystemBarsBehavior(
-                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
-
+        // NOTE: Immersive Mode - This hides the battery and notification bars at the top of the phone
+        // to make your app look like a full-screen modern application.
+        WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
+        windowInsetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
-        // -----------------------------------
 
-        // CRITICAL: Set the layout BEFORE finding any views
         setContentView(R.layout.activity_register);
 
-        // 2. Connect Java variables to XML IDs
+        // NOTE: Connecting our Java variables to the visual elements in the XML design.
         btnBack = findViewById(R.id.btnBack);
         btnRegisterSubmit = findViewById(R.id.btnRegisterSubmit);
         tvLoginLink = findViewById(R.id.tvLoginLink);
@@ -44,54 +46,63 @@ public class RegisterActivity extends AppCompatActivity {
         etRegisterPassword = findViewById(R.id.etRegisterPassword);
         etConfirmPassword = findViewById(R.id.etConfirmPassword);
 
-        // 3. Floating Go Back Button Logic
-        btnBack.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Returns to the Login screen
-                finish();
+        // NOTE: This wakes up the Firebase security guard so it is ready to accept commands.
+        mAuth = FirebaseAuth.getInstance();
+
+        // NOTE: Simple navigation buttons. 'finish()' simply closes this screen and goes back.
+        btnBack.setOnClickListener(v -> finish());
+        tvLoginLink.setOnClickListener(v -> finish());
+
+        // --- FIREBASE REGISTRATION LOGIC ---
+        btnRegisterSubmit.setOnClickListener(v -> {
+
+            // NOTE: .trim() is very important! It cuts off any accidental spaces
+            // the user might have typed at the beginning or end of their email/password.
+            String email = etRegisterUsername.getText().toString().trim();
+            String password = etRegisterPassword.getText().toString().trim();
+            String confirmPassword = etConfirmPassword.getText().toString().trim();
+
+            // NOTE: Bagrut Validation 1 - Did they leave any box completely empty?
+            if (email.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
+                Toast.makeText(RegisterActivity.this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
+                return; // Stops the code here so it doesn't try to send blank info to Firebase
             }
-        });
 
-        // 4. "Log In" Link Logic
-        tvLoginLink.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Also returns to the Login screen
-                finish();
+            // NOTE: Bagrut Validation 2 - Did they make a typo in their password?
+            if (!password.equals(confirmPassword)) {
+                Toast.makeText(RegisterActivity.this, "Passwords do not match!", Toast.LENGTH_SHORT).show();
+                return;
             }
-        });
 
-        // 5. Register Button Logic (Bagrut 5-Unit Requirement: Input Validation)
-        btnRegisterSubmit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String username = etRegisterUsername.getText().toString().trim();
-                String password = etRegisterPassword.getText().toString().trim();
-                String confirmPassword = etConfirmPassword.getText().toString().trim();
-
-                // Validation: Did they leave anything blank?
-                if (username.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
-                    Toast.makeText(RegisterActivity.this, "Please fill in all fields", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Validation: Do the passwords match?
-                if (!password.equals(confirmPassword)) {
-                    Toast.makeText(RegisterActivity.this, "Passwords do not match!", Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                // Success Message (Ready for Firebase Integration later)
-                Toast.makeText(RegisterActivity.this, "Account created successfully!", Toast.LENGTH_SHORT).show();
-
-                // Move to the Dashboard (MainActivity) to test the app flow
-                Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
-                startActivity(intent);
-
-                // finish() prevents the user from going back to the Register screen after logging in
-                finish();
+            // NOTE: Bagrut Validation 3 - Firebase requires passwords to be at least 6 characters long!
+            if (password.length() < 6) {
+                Toast.makeText(RegisterActivity.this, "Password must be at least 6 characters", Toast.LENGTH_SHORT).show();
+                return;
             }
+
+            // NOTE: This is the actual magic command. We hand the email and password to the Firebase engine.
+            // It sends it to Google's servers in the background.
+            mAuth.createUserWithEmailAndPassword(email, password)
+                    // NOTE: This "Listener" waits patiently for Google's servers to reply.
+                    .addOnCompleteListener(this, task -> {
+
+                        // NOTE: 'task.isSuccessful()' asks Firebase: "Did it work?"
+                        if (task.isSuccessful()) {
+                            // NOTE: If yes, the user is now registered and logged in simultaneously!
+                            Toast.makeText(RegisterActivity.this, "Account created!", Toast.LENGTH_SHORT).show();
+
+                            // Move them directly to the main menu
+                            Intent intent = new Intent(RegisterActivity.this, MainActivity.class);
+                            startActivity(intent);
+
+                            // Close the register screen so they can't press the back button to return here
+                            finish();
+                        } else {
+                            // NOTE: If it failed (e.g., they typed an invalid email format, or the email is already taken),
+                            // Firebase sends back an error message. 'task.getException().getMessage()' grabs that exact error text to show the user.
+                            Toast.makeText(RegisterActivity.this, "Registration Failed: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
+                        }
+                    });
         });
     }
 }

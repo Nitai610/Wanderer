@@ -19,14 +19,18 @@
         android:textStyle="bold" />
 
     <!-- 1. Weekly Card (Solid White, Elevated) -->
+
+    <!-- 2. Monthly Card (Charcoal Gray, Lighter than All-Time) -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        app:cardBackgroundColor="#595959"
+        app:cardBackgroundColor="#FFFFFF"
         app:cardCornerRadius="16dp"
         app:cardElevation="6dp"
-        app:contentPadding="20dp">
+        app:contentPadding="20dp"
+        app:strokeColor="#C2A56D"
+        app:strokeWidth="2dp">
 
         <TextView
             android:layout_width="wrap_content"
@@ -34,7 +38,7 @@
             android:layout_gravity="center_horizontal"
             android:layout_marginBottom="12dp"
             android:text="This Week"
-            android:textColor="#f2f4fc"
+            android:textColor="#1a181b"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -64,7 +68,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="0.00 KM"
-                    android:textColor="#e1dee9"
+                    android:textColor="#1a181b"
                     android:textSize="24sp"
                     android:textStyle="bold" />
             </LinearLayout>
@@ -89,14 +93,13 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="00:00"
-                    android:textColor="#e1dee9"
+                    android:textColor="#1a181b"
                     android:textSize="24sp"
                     android:textStyle="bold" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- 2. Monthly Card (Charcoal Gray, Lighter than All-Time) -->
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

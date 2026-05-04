@@ -50,12 +50,12 @@
             android:layout_height="wrap_content"
             android:layout_marginHorizontal="32dp"
             android:layout_marginTop="40dp"
-            android:hint="Username"
+            android:hint="Email"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
-            app:startIconDrawable="@android:drawable/ic_menu_edit"
+            app:startIconDrawable="@drawable/mail_icon"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvRegisterSubtitle">
@@ -65,7 +65,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@drawable/custom_input_border"
-                android:inputType="textNoSuggestions"
+                android:inputType="textEmailAddress"
                 android:padding="16dp"
                 android:textColor="#212121"
                 android:textColorHint="#757575" />

@@ -25,6 +25,9 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 
 public class SummaryActivity extends AppCompatActivity {
 
@@ -73,7 +76,7 @@ public class SummaryActivity extends AppCompatActivity {
             // Extract the data from that old walk
             finalDistance = oldWalk.distance;
             finalTime = oldWalk.time;
-            walkPath = oldWalk.path;
+            walkPath = oldWalk.getGooglePath();
 
             // Hide the Save and Discard buttons, because this walk is already saved
             btnSaveWalk.setVisibility(View.GONE);
@@ -121,7 +124,7 @@ public class SummaryActivity extends AppCompatActivity {
             }
         });
 
-        // --- DISCARD BUTTON LOGIC ---
+        // --- DISCARD BUTTON LOGIC ---walkPath = oldWalk.path;
         btnDiscardWalk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -130,26 +133,29 @@ public class SummaryActivity extends AppCompatActivity {
             }
         });
 
-        /// --- SAVE BUTTON LOGIC ---
+        // --- SAVE BUTTON LOGIC ---
         btnSaveWalk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Get today's date
                 String currentDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
-
-                // CREATE WALK
                 Walk completedWalk = new Walk(finalDistance, finalTime, currentDate, walkPath);
 
-                // FIX: Reload the history from the hard drive just in case Android wiped the static memory!
-                Walk.loadHistory(SummaryActivity.this);
+                // 1. Get the Database and the Current User's ID
+                FirebaseFirestore db = FirebaseFirestore.getInstance();
+                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
-                // Add to memory and save to phone
-                // FIX: By putting a '0' here, we force the new walk to the very front (top) of the list!
-                Walk.walkHistory.add(0, completedWalk);
-                Walk.saveHistory(SummaryActivity.this);
-
-                Toast.makeText(SummaryActivity.this, "Saved to Journal!", Toast.LENGTH_SHORT).show();
-                finish();
+                // 2. Upload to Firestore: users -> [UserID] -> walks -> [Auto-ID]
+                db.collection("users").document(userId).collection("walks")
+                        .add(completedWalk)
+                        .addOnSuccessListener(documentReference -> {
+                            // Successfully saved to the cloud! Add it to the screen and close.
+                            Walk.walkHistory.add(0, completedWalk);
+                            Toast.makeText(SummaryActivity.this, "Saved to Cloud!", Toast.LENGTH_SHORT).show();
+                            finish();
+                        })
+                        .addOnFailureListener(e -> {
+                            Toast.makeText(SummaryActivity.this, "Error saving: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                        });
             }
         });
     }

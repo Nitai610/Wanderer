@@ -10,6 +10,9 @@ import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -36,9 +39,38 @@ public class MainActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_main);
 
-        // ... the rest of your code ...
         // Load the saved walks from the phone's hard drive!
-        Walk.loadHistory(this);
+        // Make sure to import these at the top:
+//
+
+        FirebaseAuth mAuth = FirebaseAuth.getInstance();
+
+        // SECURITY CHECK: If they are not logged in, kick them to the Login Screen!
+        if (mAuth.getCurrentUser() == null) {
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return;
+        }
+
+        // LOAD DATA FROM CLOUD
+        String userId = mAuth.getCurrentUser().getUid();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("users").document(userId).collection("walks")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    Walk.walkHistory.clear(); // Clear old data
+
+                    // Loop through every walk downloaded from the cloud
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Walk downloadedWalk = document.toObject(Walk.class);
+                        Walk.walkHistory.add(downloadedWalk);
+                    }
+
+                    // Force the screen to update the math totals now that data is loaded
+                    float weeklyTotal = Walk.calculateWeeklyDistance();
+                    tvWeeklyDistanceMain.setText(String.format(java.util.Locale.US, "%.2f KM", weeklyTotal));
+                });
 
         // 2. Connect Java to the XML IDs
         btnProfile = findViewById(R.id.btnProfile);

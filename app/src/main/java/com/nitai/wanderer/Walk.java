@@ -1,86 +1,82 @@
 package com.nitai.wanderer;
 
-import android.content.Context;
-import android.content.SharedPreferences;
-
-// Imports needed for the map coordinates and saving data
 import com.google.android.gms.maps.model.LatLng;
-import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
 public class Walk {
+
     // --- VARIABLES ---
     public String distance;
     public String time;
     public String date;
-    // NEW: The "backpack" that holds every GPS coordinate from the walk
-    public ArrayList<LatLng> path;
 
-    // The master list that holds all saved walks in the app's memory
+    // NOTE: BAGRUT FIRESTORE TRICK
+    // Cloud Firestore is a "JSON-like" NoSQL database. It cannot easily save complex
+    // Android objects like Google's 'LatLng'. So, we change the path into a simple
+    // list of HashMaps (which are just basic pairs of numbers: "lat" and "lng").
+    // Firestore understands HashMaps perfectly!
+    public List<HashMap<String, Double>> path;
+
+    // The master list that holds all downloaded walks in the phone's RAM while the app is open
     public static ArrayList<Walk> walkHistory = new ArrayList<>();
 
-    // --- CONSTRUCTOR ---
-    // This is called whenever you create a brand new Walk object.
-    // We updated it to require the GPS path.
-    public Walk(String distance, String time, String date, ArrayList<LatLng> path) {
+    // --- 1. THE EMPTY CONSTRUCTOR ---
+    // NOTE: This is MANDATORY for Cloud Firestore. When Firestore downloads your data
+    // from the cloud, it creates a blank 'Walk' object first using this empty constructor,
+    // and then fills in the variables one by one. If you delete this, the app will crash!
+    public Walk() {
+    }
+
+    // --- 2. THE CREATION CONSTRUCTOR ---
+    // This is called by SummaryActivity when you finish a brand new walk.
+    public Walk(String distance, String time, String date, ArrayList<LatLng> googlePath) {
         this.distance = distance;
         this.time = time;
         this.date = date;
-        this.path = path;
-    }
 
-    // --- GETTERS ---
-    // Used by the Adapter to pull data out of the Walk object
-    public String getDate() { return date; }
-    public String getDistance() { return distance; }
-    public String getTime() { return time; }
-    public ArrayList<LatLng> getPath() { return path; }
+        // NOTE: We take the complex Google Map path and translate it into simple numbers.
+        this.path = new ArrayList<>();
+        if (googlePath != null) {
+            for (LatLng point : googlePath) {
+                // Create a simple dictionary/map for each GPS point
+                HashMap<String, Double> cord = new HashMap<>();
+                cord.put("lat", point.latitude);
+                cord.put("lng", point.longitude);
 
-    // --- PERMANENT STORAGE POWERS ---
-
-    // 1. Save to Phone
-    public static void saveHistory(Context context) {
-        // Open the phone's hidden local storage ("SharedPreferences")
-        SharedPreferences sharedPreferences = context.getSharedPreferences("WandererPrefs", Context.MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-
-        // Gson translates our entire list of Walks (including the complex GPS points) into one long text string
-        Gson gson = new Gson();
-        String json = gson.toJson(walkHistory);
-
-        // Save the text string and apply the changes
-        editor.putString("WalkList", json);
-        editor.apply();
-    }
-
-    // 2. Load from Phone
-    public static void loadHistory(Context context) {
-        SharedPreferences sharedPreferences = context.getSharedPreferences("WandererPrefs", Context.MODE_PRIVATE);
-        Gson gson = new Gson();
-        // Grab the saved text string (returns 'null' if nothing is saved yet)
-        String json = sharedPreferences.getString("WalkList", null);
-
-        if (json != null) {
-            // Tell Gson exactly what kind of data it needs to translate the text back into
-            Type type = new TypeToken<ArrayList<Walk>>() {}.getType();
-            walkHistory = gson.fromJson(json, type);
-        } else {
-            // If the app is opened for the very first time, create a blank list
-            walkHistory = new ArrayList<>();
+                // Add the simple point to our Firestore-friendly list
+                this.path.add(cord);
+            }
         }
     }
 
-    // --- ANALYTICS ENGINE (Your existing math code) ---
-    // These functions calculate the totals for your Stats screen.
+    // --- GETTERS (Used by the RecyclerView Adapter to show data on screen) ---
+    public String getDate() { return date; }
+    public String getDistance() { return distance; }
+    public String getTime() { return time; }
+
+    // NOTE: When the user clicks an old walk, we need to draw it on the Google Map.
+    // This method translates the simple Firestore numbers BACK into complex Google LatLng objects!
+    public ArrayList<LatLng> getGooglePath() {
+        ArrayList<LatLng> googlePath = new ArrayList<>();
+        if (path != null) {
+            for (HashMap<String, Double> p : path) {
+                // Rebuild the Google Map coordinate using the saved numbers
+                googlePath.add(new LatLng(p.get("lat"), p.get("lng")));
+            }
+        }
+        return googlePath;
+    }
+
+    // =====================================================================
+    // --- ANALYTICS ENGINE (All your original math code remains the same) ---
+    // =====================================================================
 
     public static float calculateAllTimeDistance() {
         float total = 0f;
         for (Walk walk : walkHistory) {
             try {
-                // Remove " KM" and convert the text (like "3.50") into a real math number
                 String numberOnly = walk.distance.replace(" KM", "").replace(",", ".").trim();
                 total += Float.parseFloat(numberOnly);
             } catch (Exception e) { e.printStackTrace(); }
@@ -94,12 +90,13 @@ public class Walk {
         int currentMonth = now.get(java.util.Calendar.MONTH);
         int currentYear = now.get(java.util.Calendar.YEAR);
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+
         for (Walk walk : walkHistory) {
             try {
                 java.util.Date walkDate = sdf.parse(walk.date);
                 java.util.Calendar walkCal = java.util.Calendar.getInstance();
                 walkCal.setTime(walkDate);
-                // Only add to the total if the walk's month and year match right now
+
                 if (walkCal.get(java.util.Calendar.MONTH) == currentMonth && walkCal.get(java.util.Calendar.YEAR) == currentYear) {
                     String numberOnly = walk.distance.replace(" KM", "").replace(",", ".").trim();
                     total += Float.parseFloat(numberOnly);
@@ -115,11 +112,13 @@ public class Walk {
         int currentWeek = now.get(java.util.Calendar.WEEK_OF_YEAR);
         int currentYear = now.get(java.util.Calendar.YEAR);
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+
         for (Walk walk : walkHistory) {
             try {
                 java.util.Date walkDate = sdf.parse(walk.date);
                 java.util.Calendar walkCal = java.util.Calendar.getInstance();
                 walkCal.setTime(walkDate);
+
                 if (walkCal.get(java.util.Calendar.WEEK_OF_YEAR) == currentWeek && walkCal.get(java.util.Calendar.YEAR) == currentYear) {
                     String numberOnly = walk.distance.replace(" KM", "").replace(",", ".").trim();
                     total += Float.parseFloat(numberOnly);
@@ -128,8 +127,6 @@ public class Walk {
         }
         return total;
     }
-
-    // --- TIME ANALYTICS ENGINE (Your existing math code) ---
 
     // Helper: Turns "15:30" (MM:SS) into raw seconds for easier math
     private static int parseTimeToSeconds(String timeStr) {
@@ -170,11 +167,13 @@ public class Walk {
         int currentMonth = now.get(java.util.Calendar.MONTH);
         int currentYear = now.get(java.util.Calendar.YEAR);
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+
         for (Walk walk : walkHistory) {
             try {
                 java.util.Date walkDate = sdf.parse(walk.date);
                 java.util.Calendar walkCal = java.util.Calendar.getInstance();
                 walkCal.setTime(walkDate);
+
                 if (walkCal.get(java.util.Calendar.MONTH) == currentMonth && walkCal.get(java.util.Calendar.YEAR) == currentYear) {
                     totalSeconds += parseTimeToSeconds(walk.time);
                 }
@@ -189,11 +188,13 @@ public class Walk {
         int currentWeek = now.get(java.util.Calendar.WEEK_OF_YEAR);
         int currentYear = now.get(java.util.Calendar.YEAR);
         java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+
         for (Walk walk : walkHistory) {
             try {
                 java.util.Date walkDate = sdf.parse(walk.date);
                 java.util.Calendar walkCal = java.util.Calendar.getInstance();
                 walkCal.setTime(walkDate);
+
                 if (walkCal.get(java.util.Calendar.WEEK_OF_YEAR) == currentWeek && walkCal.get(java.util.Calendar.YEAR) == currentYear) {
                     totalSeconds += parseTimeToSeconds(walk.time);
                 }
