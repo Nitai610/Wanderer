@@ -130,15 +130,18 @@ public class SummaryActivity extends AppCompatActivity {
             }
         });
 
-        // --- SAVE BUTTON LOGIC ---
+        /// --- SAVE BUTTON LOGIC ---
         btnSaveWalk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // Get today's date
                 String currentDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
 
-                // CREATE WALK (Now passing 'walkPath' so the map is saved permanently!)
+                // CREATE WALK
                 Walk completedWalk = new Walk(finalDistance, finalTime, currentDate, walkPath);
+
+                // FIX: Reload the history from the hard drive just in case Android wiped the static memory!
+                Walk.loadHistory(SummaryActivity.this);
 
                 // Add to memory and save to phone
                 Walk.walkHistory.add(completedWalk);

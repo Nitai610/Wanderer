@@ -177,7 +177,7 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
     private void startTrackingService() {
         Intent serviceIntent = new Intent(this, TrackingService.class);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            startForegroundService(serviceIntent); // Required by Android 8.0+
+            startForegroundService(serviceIntent); // Android 8.0+ requires this
         } else {
             startService(serviceIntent);
         }

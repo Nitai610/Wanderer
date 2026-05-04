@@ -40,7 +40,8 @@ public class TrackingService extends Service {
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
         setupLocationCallback();
     }
-
+    // We no longer call startForeground() here.
+    // It just silently starts doing its job in the backgrounblalblal
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
         if (!isServiceRunning) {
@@ -50,8 +51,9 @@ public class TrackingService extends Service {
             liveSecondsElapsed = 0;
             lastKnownLocation = null;
 
-            // We no longer call startForeground() here.
-            // It just silently starts doing its job in the background!
+            // ---> ADD THIS LINE HERE: <---
+            startForegroundWithNotification();
+
             startLocationUpdates();
             startTimer();
         }
@@ -111,4 +113,32 @@ public class TrackingService extends Service {
     @Nullable
     @Override
     public IBinder onBind(Intent intent) { return null; }
+    // --- THE BAGRUT NOTIFICATION METHOD ---
+    private void startForegroundWithNotification() {
+        String channelId = "wanderer_tracking_channel";
+
+        // 1. Create a "Channel" (Android 8.0+ requires all notifications to have a channel)
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            android.app.NotificationChannel channel = new android.app.NotificationChannel(
+                    channelId,
+                    "Walk Tracking",
+                    android.app.NotificationManager.IMPORTANCE_LOW // LOW importance so it doesn't beep loudly
+            );
+            android.app.NotificationManager manager = getSystemService(android.app.NotificationManager.class);
+            if (manager != null) {
+                manager.createNotificationChannel(channel);
+            }
+        }
+
+        // 2. Build the actual visual notification
+        android.app.Notification notification = new androidx.core.app.NotificationCompat.Builder(this, channelId)
+                .setContentTitle("Wanderer is Active")
+                .setContentText("Currently tracking your walk in the background...")
+                .setSmallIcon(android.R.drawable.ic_menu_mylocation) // Standard built-in Android icon
+                .build();
+
+        // 3. Command Android to run this service in the foreground with the notification
+        // The number '1' is just a random ID for the notification.
+        startForeground(1, notification);
+    }
 }
