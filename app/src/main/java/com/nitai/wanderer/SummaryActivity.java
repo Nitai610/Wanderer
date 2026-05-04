@@ -142,10 +142,10 @@ public class SummaryActivity extends AppCompatActivity {
 
                 // 1. Get the Database and the Current User's ID
                 FirebaseFirestore db = FirebaseFirestore.getInstance();
-                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                String userEmail = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
                 // 2. Upload to Firestore: users -> [UserID] -> walks -> [Auto-ID]
-                db.collection("users").document(userId).collection("walks")
+                db.collection("users").document(userEmail).collection("walks")
                         .add(completedWalk)
                         .addOnSuccessListener(documentReference -> {
                             // Successfully saved to the cloud! Add it to the screen and close.

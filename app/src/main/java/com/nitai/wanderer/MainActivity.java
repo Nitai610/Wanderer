@@ -53,10 +53,10 @@ public class MainActivity extends AppCompatActivity {
         }
 
         // LOAD DATA FROM CLOUD
-        String userId = mAuth.getCurrentUser().getUid();
+        String userEmail = mAuth.getCurrentUser().getUid();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        db.collection("users").document(userId).collection("walks")
+        db.collection("users").document(userEmail).collection("walks")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     Walk.walkHistory.clear(); // Clear old data
@@ -82,13 +82,12 @@ public class MainActivity extends AppCompatActivity {
         btnJournal = findViewById(R.id.btnJournal);
         btnStats = findViewById(R.id.btnStats);
 
-        // 3. Profile Button Logic (Log Out)
+        // 3. Profile Button Logic (Goes to Profile Page)
         btnProfile.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Intent intent = new Intent(MainActivity.this, LoginActivity.class);
+                Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
                 startActivity(intent);
-                finish();
             }
         });
 

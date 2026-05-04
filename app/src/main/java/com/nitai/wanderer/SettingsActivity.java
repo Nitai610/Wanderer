@@ -82,10 +82,10 @@ public class SettingsActivity extends AppCompatActivity {
 
                                 // 1. Get the Database and User ID
                                 FirebaseFirestore db = FirebaseFirestore.getInstance();
-                                String userId = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                                String userEmail = FirebaseAuth.getInstance().getCurrentUser().getUid();
 
                                 // 2. Go to the user's "walks" folder in the cloud
-                                db.collection("users").document(userId).collection("walks")
+                                db.collection("users").document(userEmail).collection("walks")
                                         .get()
                                         .addOnSuccessListener(queryDocumentSnapshots -> {
 
