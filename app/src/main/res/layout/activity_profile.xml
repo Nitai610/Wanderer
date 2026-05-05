@@ -83,7 +83,7 @@
                 app:icon="@android:drawable/ic_menu_edit"
                 app:iconTint="#1976D2" />
 
-            <!-- NEW: Divider Line -->
+            <!-- Divider Line -->
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -92,14 +92,14 @@
                 android:layout_marginBottom="16dp"
                 android:background="#E0E0E0" />
 
-            <!-- NEW: Mini Stats Bar -->
+            <!-- Mini Stats Bar (Updated to match All-Time Stats) -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
                 android:paddingHorizontal="16dp">
 
-                <!-- Stat 1: Total Walks -->
+                <!-- Stat 1: All-Time Distance -->
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -110,34 +110,7 @@
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="TOTAL WALKS"
-                        android:textColor="#9E9E9E"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tvProfileTotalWalks"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:text="0"
-                        android:textColor="#212121"
-                        android:textSize="24sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-
-                <!-- Stat 2: All-Time Distance -->
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="ALL-TIME DISTANCE"
+                        android:text="DISTANCE"
                         android:textColor="#9E9E9E"
                         android:textSize="12sp"
                         android:textStyle="bold" />
@@ -153,7 +126,52 @@
                         android:textStyle="bold" />
                 </LinearLayout>
 
+                <!-- Stat 2: Total Duration -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="DURATION"
+                        android:textColor="#9E9E9E"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvProfileTotalTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:text="00:00"
+                        android:textColor="#212121"
+                        android:textSize="24sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
             </LinearLayout>
+
+            <!-- NEW: Leaderboard Button (Added to compare users!) -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnOpenLeaderboard"
+                android:layout_width="match_parent"
+                android:layout_height="60dp"
+                android:layout_marginHorizontal="32dp"
+                android:layout_marginTop="32dp"
+                android:text="VIEW LEADERBOARD"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:textStyle="bold"
+                app:backgroundTint="#FFB300"
+                app:cornerRadius="16dp"
+                app:elevation="4dp"
+                app:icon="@android:drawable/btn_star_big_on"
+                app:iconGravity="textStart"
+                app:iconTint="#FFFFFF" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

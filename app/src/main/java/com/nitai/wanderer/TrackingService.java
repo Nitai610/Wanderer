@@ -30,6 +30,7 @@ public class TrackingService extends Service {
     public static boolean isServiceRunning = false;
 
     private FusedLocationProviderClient fusedLocationClient;
+    // ...
     private LocationCallback locationCallback;
     private Location lastKnownLocation = null;
     private Handler timerHandler = new Handler();
@@ -75,8 +76,10 @@ public class TrackingService extends Service {
                     livePath.add(currentLatLng);
 
                     if (lastKnownLocation != null) {
+                        // Simply add whatever distance they moved directly to the total!
                         liveDistanceInMeters += lastKnownLocation.distanceTo(location);
                     }
+
                     lastKnownLocation = location;
                     sendUpdateBroadcast();
                 }
@@ -89,14 +92,15 @@ public class TrackingService extends Service {
             @Override
             public void run() {
                 if (isServiceRunning) {
+                    // Add a second unconditionally, every single second.
                     liveSecondsElapsed++;
+
                     sendUpdateBroadcast();
                     timerHandler.postDelayed(this, 1000);
                 }
             }
         }, 1000);
     }
-
     private void sendUpdateBroadcast() {
         Intent intent = new Intent("UPDATE_UI_BROADCAST");
         intent.setPackage(getPackageName());

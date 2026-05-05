@@ -8,6 +8,7 @@ import java.util.List;
 public class Walk {
 
     // --- VARIABLES ---
+    public String username; // Added so the Leaderboard knows who did this walk!
     public String distance;
     public String time;
     public String date;
@@ -16,7 +17,6 @@ public class Walk {
     // Cloud Firestore is a "JSON-like" NoSQL database. It cannot easily save complex
     // Android objects like Google's 'LatLng'. So, we change the path into a simple
     // list of HashMaps (which are just basic pairs of numbers: "lat" and "lng").
-    // Firestore understands HashMaps perfectly!
     public List<HashMap<String, Double>> path;
 
     // The master list that holds all downloaded walks in the phone's RAM while the app is open
@@ -24,14 +24,14 @@ public class Walk {
 
     // --- 1. THE EMPTY CONSTRUCTOR ---
     // NOTE: This is MANDATORY for Cloud Firestore. When Firestore downloads your data
-    // from the cloud, it creates a blank 'Walk' object first using this empty constructor,
-    // and then fills in the variables one by one. If you delete this, the app will crash!
+    // from the cloud, it creates a blank 'Walk' object first using this empty constructor.
     public Walk() {
     }
 
     // --- 2. THE CREATION CONSTRUCTOR ---
     // This is called by SummaryActivity when you finish a brand new walk.
-    public Walk(String distance, String time, String date, ArrayList<LatLng> googlePath) {
+    public Walk(String username, String distance, String time, String date, ArrayList<LatLng> googlePath) {
+        this.username = username;
         this.distance = distance;
         this.time = time;
         this.date = date;
@@ -51,7 +51,8 @@ public class Walk {
         }
     }
 
-    // --- GETTERS (Used by the RecyclerView Adapter to show data on screen) ---
+    // --- GETTERS (Used by the Adapters to show data on screen) ---
+    public String getUsername() { return username; }
     public String getDate() { return date; }
     public String getDistance() { return distance; }
     public String getTime() { return time; }
@@ -70,7 +71,7 @@ public class Walk {
     }
 
     // =====================================================================
-    // --- ANALYTICS ENGINE (All your original math code remains the same) ---
+    // --- ANALYTICS ENGINE (Your math code for the Stats and Profile pages) ---
     // =====================================================================
 
     public static float calculateAllTimeDistance() {

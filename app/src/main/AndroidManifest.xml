@@ -20,9 +20,11 @@
         android:theme="@style/Theme.Wanderer"
         tools:targetApi="31">
         <activity
-            android:name=".ProfileActivity"
+            android:name=".LeaderboardActivity"
             android:exported="false" />
-        <!-- 3. NEW: Register the Background Tracking Service -->
+        <activity
+            android:name=".ProfileActivity"
+            android:exported="false" /> <!-- 3. NEW: Register the Background Tracking Service -->
         <!-- The foregroundServiceType="location" is required by Android 14+ to track GPS -->
         <service
             android:name=".TrackingService"

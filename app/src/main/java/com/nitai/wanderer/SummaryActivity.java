@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 
 
@@ -138,17 +139,27 @@ public class SummaryActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 String currentDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
-                Walk completedWalk = new Walk(finalDistance, finalTime, currentDate, walkPath);
 
-                // 1. Get the Database and the Current User's ID
+                // 1. Grab the current Firebase User
+                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                String userEmail = user.getEmail();
+
+                // 2. Figure out their Display Name
+                String currentUsername = user.getDisplayName();
+                if (currentUsername == null || currentUsername.isEmpty()) {
+                    // Fallback trick if they haven't set a custom name yet
+                    currentUsername = userEmail.split("@")[0];
+                    currentUsername = currentUsername.substring(0, 1).toUpperCase() + currentUsername.substring(1);
+                }
+
+                // 3. Create the Walk WITH the username!
+                Walk completedWalk = new Walk(currentUsername, finalDistance, finalTime, currentDate, walkPath);
+
+                // 4. Save to Firestore using the EMAIL as the folder name
                 FirebaseFirestore db = FirebaseFirestore.getInstance();
-                String userEmail = FirebaseAuth.getInstance().getCurrentUser().getUid();
-
-                // 2. Upload to Firestore: users -> [UserID] -> walks -> [Auto-ID]
                 db.collection("users").document(userEmail).collection("walks")
                         .add(completedWalk)
                         .addOnSuccessListener(documentReference -> {
-                            // Successfully saved to the cloud! Add it to the screen and close.
                             Walk.walkHistory.add(0, completedWalk);
                             Toast.makeText(SummaryActivity.this, "Saved to Cloud!", Toast.LENGTH_SHORT).show();
                             finish();
