@@ -4,6 +4,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
@@ -13,6 +14,12 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.android.material.button.MaterialButton;
+
+// NEW FIRESTORE IMPORTS
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 public class JournalActivity extends AppCompatActivity {
 
@@ -31,7 +38,6 @@ public class JournalActivity extends AppCompatActivity {
         windowInsetsController.setSystemBarsBehavior(
                 WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
-        // ----------------------
 
         setContentView(R.layout.activity_journal);
 
@@ -41,53 +47,78 @@ public class JournalActivity extends AppCompatActivity {
         btnJournalBack = findViewById(R.id.btnJournalBack);
         recyclerViewJournal = findViewById(R.id.recyclerViewJournal);
 
-        // Use a standard layout manager (Remember, we fixed the reverse order issue
-        // by adding new walks to index 0 in the SummaryActivity instead!)
         recyclerViewJournal.setLayoutManager(new LinearLayoutManager(this));
 
-        // 2. LOGIC: Show the empty box or the list?
-        if (Walk.walkHistory.isEmpty()) {
-            layoutEmptyState.setVisibility(View.VISIBLE); // Show the empty box
-            recyclerViewJournal.setVisibility(View.GONE);
-        } else {
-            layoutEmptyState.setVisibility(View.GONE); // Hide the empty box
-            recyclerViewJournal.setVisibility(View.VISIBLE);
+        // 2. Set up the Adapter immediately (Even if the list is empty right now)
+        adapter = new WalkAdapter(Walk.walkHistory, new WalkAdapter.OnWalkDeleteListener() {
+            @Override
+            public void onWalkDeleted() {
+                // When a walk is deleted, check if we need to show the empty box
+                checkIfEmpty();
+            }
+        });
+        recyclerViewJournal.setAdapter(adapter);
 
-            // Set up the Adapter with the delete bridge
-            adapter = new WalkAdapter(Walk.walkHistory, new WalkAdapter.OnWalkDeleteListener() {
-                @Override
-                public void onWalkDeleted() {
+        // 3. SECURE FIX: Always fetch the data from the cloud when Journal opens!
+        // This guarantees walks will appear even if Android wiped the RAM.
+        fetchWalksFromCloud();
 
-                    // NOTE: We removed Walk.saveHistory() because we use Firestore now!
-                    // This currently removes the walk from the screen perfectly.
-                    // (If you want it to permanently delete from the cloud later, let me know!)
-
-                    // If they just deleted the very last walk, show the empty box again
-                    if (Walk.walkHistory.isEmpty()) {
-                        layoutEmptyState.setVisibility(View.VISIBLE);
-                        recyclerViewJournal.setVisibility(View.GONE);
-                    }
-                }
-            });
-            recyclerViewJournal.setAdapter(adapter);
-        }
-
-        // 3. Start Walk Button Logic (From the Empty State)
+        // 4. Start Walk Button Logic
         btnEmptyStartWalk.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent(JournalActivity.this, TravelActivity.class);
                 startActivity(intent);
-                finish(); // Close the journal so they return to Main Menu later
+                finish();
             }
         });
 
-        // 4. Global Go Back Button Logic (Always at the bottom)
+        // 5. Global Go Back Button Logic
         btnJournalBack.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                finish(); // Closes the journal screen safely
+                finish();
             }
         });
+    }
+
+    // --- HELPER METHOD: DOWNLOAD DATA ---
+    private void fetchWalksFromCloud() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || user.getEmail() == null) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        // Go to this specific user's folder
+        db.collection("users").document(user.getEmail()).collection("walks")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+
+                    Walk.walkHistory.clear(); // Clear the memory just in case
+
+                    // Loop through the cloud database and rebuild the list
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Walk downloadedWalk = document.toObject(Walk.class);
+                        Walk.walkHistory.add(downloadedWalk);
+                    }
+
+                    // Tell the screen to update with the new data
+                    adapter.notifyDataSetChanged();
+                    checkIfEmpty();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(JournalActivity.this, "Error loading journal.", Toast.LENGTH_SHORT).show();
+                });
+    }
+
+    // --- HELPER METHOD: TOGGLE EMPTY STATE ---
+    private void checkIfEmpty() {
+        if (Walk.walkHistory.isEmpty()) {
+            layoutEmptyState.setVisibility(View.VISIBLE); // Show the empty box
+            recyclerViewJournal.setVisibility(View.GONE); // Hide the list
+        } else {
+            layoutEmptyState.setVisibility(View.GONE); // Hide the empty box
+            recyclerViewJournal.setVisibility(View.VISIBLE); // Show the list
+        }
     }
 }
