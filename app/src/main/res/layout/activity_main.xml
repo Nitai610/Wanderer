@@ -8,7 +8,6 @@
     android:background="#FAFAFA"
     tools:context=".MainActivity">
 
-    <!-- Custom Top Bar Area -->
     <ImageButton
         android:id="@+id/btnProfile"
         android:layout_width="48dp"
@@ -49,7 +48,6 @@
         app:srcCompat="@drawable/settings_icon"
         app:tint="#333333" />
 
-    <!-- Weekly Stats Card -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/cardWeeklyStats"
         android:layout_width="match_parent"
@@ -87,10 +85,19 @@
                 android:textColor="#1976D2"
                 android:textSize="48sp"
                 android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tvDailyStepsMain"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:text="Syncing Steps..."
+                android:textColor="#FFB300"
+                android:textSize="18sp"
+                android:textStyle="bold" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
-    <!-- Secondary Buttons (Journal & Stats) -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnJournal"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"
@@ -111,7 +118,6 @@
         app:strokeColor="#BDBDBD"
         app:strokeWidth="2dp" />
 
-    <!-- Primary Action: Start Travel Button -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnStats"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"

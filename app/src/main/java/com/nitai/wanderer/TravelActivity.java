@@ -8,6 +8,8 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import androidx.annotation.NonNull;
@@ -29,11 +31,17 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
     private GoogleMap mMap;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 100;
 
-    TextView tvLiveDistance, tvLiveTimer;
+    TextView tvLiveDistance, tvLiveTimer, tvLiveSteps;
     MaterialButton btnStopWalk;
     ImageButton btnCancelWalk;
 
-    // --- THE RADIO RECEIVER (OBSERVER PATTERN) ---
+    // --- HEALTH CONNECT POLLING VARIABLES ---
+    HealthConnectBridge healthBridge;
+    private long startingSteps = -1; // -1 means we haven't locked in the starting value yet
+    private Handler stepPollingHandler = new Handler(Looper.getMainLooper());
+    private Runnable stepPollingRunnable;
+
+    // --- RADIO RECEIVER FOR GPS SERVICE ---
     private BroadcastReceiver uiUpdateReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -45,7 +53,6 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Immersive Mode
         WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
 
@@ -53,20 +60,22 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
 
         tvLiveDistance = findViewById(R.id.tvLiveDistance);
         tvLiveTimer = findViewById(R.id.tvLiveTimer);
+        tvLiveSteps = findViewById(R.id.tvLiveSteps); // NEW
         btnStopWalk = findViewById(R.id.btnStopWalk);
         btnCancelWalk = findViewById(R.id.btnCancelWalk);
+
+        healthBridge = new HealthConnectBridge(this);
 
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.mapFragment);
         if (mapFragment != null) mapFragment.getMapAsync(this);
 
         btnStopWalk.setOnClickListener(v -> {
-            // Passing final data to SummaryActivity
             Intent intent = new Intent(TravelActivity.this, SummaryActivity.class);
             intent.putExtra("FINAL_DISTANCE", tvLiveDistance.getText().toString());
             intent.putExtra("FINAL_TIME", tvLiveTimer.getText().toString());
             intent.putParcelableArrayListExtra("PATH_POINTS", TrackingService.livePath);
 
-            stopTrackingService(); // Stop the service while user reviews summary
+            stopTrackingService();
             startActivity(intent);
             finish();
         });
@@ -75,13 +84,55 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
             stopTrackingService();
             finish();
         });
+
+        // =========================================================================
+        // BAGRUT NOTE: The Background Polling Loop
+        // Health Connect is a central database, not a real-time hardware stream.
+        // We use a Handler and Runnable to create an infinite loop that asks Google
+        // for new steps every 15 seconds. This is battery-efficient while still
+        // giving the user "live" feedback during their walk.
+        // =========================================================================
+        stepPollingRunnable = new Runnable() {
+            @Override
+            public void run() {
+                if (TrackingService.isServiceRunning) {
+                    fetchLiveWalkSteps();
+                }
+                // Post this exact block of code to run again in 15000 milliseconds (15s)
+                stepPollingHandler.postDelayed(this, 15000);
+            }
+        };
+    }
+
+    private void fetchLiveWalkSteps() {
+        healthBridge.readTodaySteps(new HealthConnectBridge.StepsCallback() {
+            @Override
+            public void onSuccess(long currentTotalDailySteps) {
+
+                // BAGRUT NOTE: Relative Step Math
+                // Health Connect only gives us "Total Steps Today". To find out how many
+                // steps were taken *during this walk*, we save the total the moment the walk
+                // begins. Then, we subtract the starting line from the live total.
+                if (startingSteps == -1) {
+                    startingSteps = currentTotalDailySteps;
+                }
+
+                long stepsTakenThisWalk = currentTotalDailySteps - startingSteps;
+
+                if (tvLiveSteps != null) {
+                    tvLiveSteps.setText(stepsTakenThisWalk + " Steps");
+                }
+            }
+
+            @Override
+            public void onFailure(String errorMessage) {
+                // Ignore failures silently so it doesn't interrupt the GPS map view
+            }
+        });
     }
 
     private void startTrackingService() {
         Intent serviceIntent = new Intent(this, TrackingService.class);
-
-        // BAGRUT LOGIC: We check if TravelActivity itself was opened with a "Resume" flag.
-        // We then forward that flag to the Background Service.
         boolean isResuming = getIntent().getBooleanExtra("RESUME_WALK", false);
         serviceIntent.putExtra("RESUME_WALK", isResuming);
 
@@ -95,11 +146,9 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
     private void updateScreenFromService() {
         if (!TrackingService.isServiceRunning) return;
 
-        // 1. Update Distance
         float distanceInKm = TrackingService.liveDistanceInMeters / 1000f;
         tvLiveDistance.setText(String.format(java.util.Locale.US, "%.2f KM", distanceInKm));
 
-        // 2. Update Timer (Supports HH:MM:SS)
         int hours = TrackingService.liveSecondsElapsed / 3600;
         int minutes = (TrackingService.liveSecondsElapsed % 3600) / 60;
         int seconds = TrackingService.liveSecondsElapsed % 60;
@@ -110,7 +159,6 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
             tvLiveTimer.setText(String.format(java.util.Locale.US, "%02d:%02d", minutes, seconds));
         }
 
-        // 3. Update Camera
         if (!TrackingService.livePath.isEmpty() && mMap != null) {
             LatLng latestSpot = TrackingService.livePath.get(TrackingService.livePath.size() - 1);
             mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(latestSpot, 17f));
@@ -145,11 +193,20 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
         super.onResume();
         ContextCompat.registerReceiver(this, uiUpdateReceiver, new IntentFilter("UPDATE_UI_BROADCAST"), ContextCompat.RECEIVER_NOT_EXPORTED);
         updateScreenFromService();
+
+        // 1. Trigger the step check immediately when the screen opens
+        fetchLiveWalkSteps();
+        // 2. Start the 15-second loop
+        stepPollingHandler.post(stepPollingRunnable);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
         unregisterReceiver(uiUpdateReceiver);
+
+        // BAGRUT NOTE: We must kill the polling loop when the user minimizes the app.
+        // If we don't, the Handler will continue pinging Google forever and drain the battery!
+        stepPollingHandler.removeCallbacks(stepPollingRunnable);
     }
 }
