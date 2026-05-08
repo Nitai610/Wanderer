@@ -65,7 +65,7 @@
             android:exported="false" /> <!-- GOOGLE MAPS API KEY -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCAN-_jiLk72t6vAhWu5QZbrGpRtwLR99s" />
+            android:value="@string/my_maps_api_key" />
     </application>
 
 </manifest>
