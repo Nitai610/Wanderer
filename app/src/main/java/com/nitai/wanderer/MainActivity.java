@@ -124,7 +124,7 @@ public class MainActivity extends AppCompatActivity {
             healthBridge.readTodaySteps(new HealthConnectBridge.StepsCallback() {
                 @Override
                 public void onSuccess(long totalSteps) {
-                    tvDailyStepsMain.setText(totalSteps + " Steps Today");
+                    tvDailyStepsMain.setText(totalSteps + " Steps");
                 }
 
                 @Override
