@@ -16,8 +16,10 @@ import com.google.android.material.button.MaterialButton;
 
 // NOTE: We need the Firebase tools to delete cloud data and log out safely!
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+import com.google.firebase.firestore.WriteBatch;
 
 public class SettingsActivity extends AppCompatActivity {
 
@@ -56,10 +58,10 @@ public class SettingsActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 new AlertDialog.Builder(SettingsActivity.this)
-                        .setTitle("Ping!")
-                        .setMessage("This is a test notification from Wanderer.")
+                        .setTitle("ding dong!")
+                        .setMessage("nigi")
                         .setIcon(android.R.drawable.ic_dialog_info)
-                        .setPositiveButton("Dismiss", new DialogInterface.OnClickListener() {
+                        .setPositiveButton("fahh", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
                                 dialog.dismiss();
@@ -80,27 +82,39 @@ public class SettingsActivity extends AppCompatActivity {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
 
-                                // 1. Get the Database and User ID
+                                // BAGRUT FIX: Get the Database and the correct User Email!
+                                FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                                if (user == null || user.getEmail() == null) return;
+
                                 FirebaseFirestore db = FirebaseFirestore.getInstance();
-                                String userEmail = FirebaseAuth.getInstance().getCurrentUser().getUid();
+                                String userEmail = user.getEmail();
 
                                 // 2. Go to the user's "walks" folder in the cloud
                                 db.collection("users").document(userEmail).collection("walks")
                                         .get()
                                         .addOnSuccessListener(queryDocumentSnapshots -> {
 
-                                            // NOTE: Cloud Firestore requires us to loop through and delete files one by one.
+                                            // BAGRUT NOTE: We use a WriteBatch for massive deletions.
+                                            // This tells Firebase to queue up all the deletions and execute them
+                                            // in one single network request, saving battery and data!
+                                            WriteBatch batch = db.batch();
+
                                             for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                                                document.getReference().delete();
+                                                batch.delete(document.getReference());
                                             }
 
-                                            // 3. Clear the memory in the phone so the screen updates immediately
-                                            Walk.walkHistory.clear();
+                                            // Execute the mass deletion
+                                            batch.commit().addOnSuccessListener(aVoid -> {
+                                                // 3. Clear the memory in the phone so the screen updates immediately
+                                                Walk.walkHistory.clear();
+                                                Toast.makeText(SettingsActivity.this, "Journal completely cleared", Toast.LENGTH_SHORT).show();
+                                            }).addOnFailureListener(e -> {
+                                                Toast.makeText(SettingsActivity.this, "Error during mass deletion", Toast.LENGTH_SHORT).show();
+                                            });
 
-                                            Toast.makeText(SettingsActivity.this, "Journal completely cleared", Toast.LENGTH_SHORT).show();
                                         })
                                         .addOnFailureListener(e -> {
-                                            Toast.makeText(SettingsActivity.this, "Error deleting: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                                            Toast.makeText(SettingsActivity.this, "Error finding walks: " + e.getMessage(), Toast.LENGTH_SHORT).show();
                                         });
                             }
                         })
