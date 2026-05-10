@@ -6,6 +6,7 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
 import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
+import androidx.health.connect.client.request.AggregateRequest // NEW: Import the Aggregate Request tool
 import androidx.health.connect.client.time.TimeRangeFilter
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -13,9 +14,6 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
-// NOTE FOR BAGRUT: Why use a separate Kotlin class for this?
-// "Google's official Health Connect library is written exclusively for Kotlin Coroutines.
-// I created this bridge class so my Java code could easily ask for step and calorie data without breaking compatibility."
 class HealthConnectBridge(private val context: Context) {
 
     private val client: HealthConnectClient? =
@@ -28,7 +26,6 @@ class HealthConnectBridge(private val context: Context) {
         fun onFailure(errorMessage: String)
     }
 
-    // NOTE: Tells the system we need both Step and Calorie permissions.
     fun getRequiredPermissions(): Set<String> {
         return setOf(
             HealthPermission.getReadPermission(StepsRecord::class),
@@ -41,9 +38,6 @@ class HealthConnectBridge(private val context: Context) {
             callback.onFailure("Health Connect is not installed.")
             return
         }
-        // NOTE FOR BAGRUT: What is CoroutineScope(Dispatchers.IO)?
-        // "It forces the data download to happen on a background thread. If I did this on the Main thread,
-        // the app's UI would freeze completely while waiting for Google's database to respond."
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val startOfDay = Instant.now().truncatedTo(ChronoUnit.DAYS)
@@ -56,7 +50,6 @@ class HealthConnectBridge(private val context: Context) {
                 for (record in response.records) {
                     totalSteps += record.count
                 }
-                // NOTE: Switch back to the Main thread so we can safely update the TextViews
                 CoroutineScope(Dispatchers.Main).launch { callback.onSuccess(totalSteps) }
             } catch (e: Exception) {
                 CoroutineScope(Dispatchers.Main).launch { callback.onFailure(e.message ?: "Error") }
@@ -64,23 +57,34 @@ class HealthConnectBridge(private val context: Context) {
         }
     }
 
+    // =========================================================
+    // FIX: Updated to use AggregateRequest for Calories
+    // =========================================================
     fun readTodayCalories(callback: HealthCallback) {
         if (client == null) {
             callback.onFailure("Health Connect is not installed.")
             return
         }
+
+        // NOTE FOR BAGRUT: Why use AggregateRequest instead of ReadRecordsRequest?
+        // "Google Fit calculates Total Calories by adding Active Burned Calories + Resting BMR Calories.
+        // Because it's a combined mathematical formula, reading the raw records returns 0.
+        // I have to use the Aggregate API to ask Google's servers to calculate the final combined sum for me."
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val startOfDay = Instant.now().truncatedTo(ChronoUnit.DAYS)
-                val request = ReadRecordsRequest(
-                    recordType = TotalCaloriesBurnedRecord::class,
+
+                // We ask Health Connect specifically for the ENERGY_TOTAL aggregate metric
+                val request = AggregateRequest(
+                    metrics = setOf(TotalCaloriesBurnedRecord.ENERGY_TOTAL),
                     timeRangeFilter = TimeRangeFilter.between(startOfDay, Instant.now())
                 )
-                val response = client.readRecords(request)
-                var totalCalories = 0.0
-                for (record in response.records) {
-                    totalCalories += record.energy.inKilocalories
-                }
+
+                val response = client.aggregate(request)
+
+                // Extract the total from the response. If it's null (e.g. no data yet), default to 0.0
+                val totalCalories = response[TotalCaloriesBurnedRecord.ENERGY_TOTAL]?.inKilocalories ?: 0.0
+
                 CoroutineScope(Dispatchers.Main).launch { callback.onSuccess(totalCalories.toLong()) }
             } catch (e: Exception) {
                 CoroutineScope(Dispatchers.Main).launch { callback.onFailure(e.message ?: "Error") }

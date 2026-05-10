@@ -26,9 +26,10 @@ public class MainActivity extends AppCompatActivity {
 
     ImageButton btnProfile, btnSettings;
     View btnStartWalk, btnJournal, btnStats;
-    TextView tvWeeklyDistanceMain, tvDailyStepsMain;
 
-    // NEW: The Bridge to our Kotlin file
+    // NEW: Added tvDailyCaloriesMain
+    TextView tvWeeklyDistanceMain, tvDailyStepsMain, tvDailyCaloriesMain;
+
     HealthConnectBridge healthBridge;
 
     @Override
@@ -44,15 +45,14 @@ public class MainActivity extends AppCompatActivity {
         btnProfile = findViewById(R.id.btnProfile);
         btnSettings = findViewById(R.id.btnSettings);
         tvWeeklyDistanceMain = findViewById(R.id.tvWeeklyDistanceMain);
-        tvDailyStepsMain = findViewById(R.id.tvDailyStepsMain); // NEW ID
+        tvDailyStepsMain = findViewById(R.id.tvDailyStepsMain);
+        tvDailyCaloriesMain = findViewById(R.id.tvDailyCaloriesMain); // NEW ID Link
         btnStartWalk = findViewById(R.id.btnStartWalk);
         btnJournal = findViewById(R.id.btnJournal);
         btnStats = findViewById(R.id.btnStats);
 
-        // Initialize the bridge
         healthBridge = new HealthConnectBridge(this);
 
-        // --- SECURITY CHECK ---
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
         FirebaseUser currentUser = mAuth.getCurrentUser();
 
@@ -62,7 +62,6 @@ public class MainActivity extends AppCompatActivity {
             return;
         }
 
-        // --- CLOUD FIRESTORE FETCH (Asynchronous) ---
         String userEmail = currentUser.getEmail();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
         db.collection("users").document(userEmail).collection("walks")
@@ -79,13 +78,11 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(MainActivity.this, "Failed to sync data", Toast.LENGTH_SHORT).show();
                 });
 
-        // --- BUTTON CLICKS ---
         btnProfile.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, ProfileActivity.class)));
         btnSettings.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, SettingsActivity.class)));
         btnJournal.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, JournalActivity.class)));
         btnStats.setOnClickListener(v -> startActivity(new Intent(MainActivity.this, StatsActivity.class)));
 
-        // --- GPS HARDWARE CHECK ---
         btnStartWalk.setOnClickListener(v -> {
             LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             boolean isGpsEnabled = false;
@@ -109,19 +106,13 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    // =========================================================================
-    // BAGRUT NOTE: Auto-Load Lifecycle Hook
-    // We place the Health Connect call inside onResume(). This guarantees that
-    // whenever the user looks at the main menu (even coming back from a walk),
-    // the app silently asks Google's servers for fresh step data and updates the UI.
-    // =========================================================================
     @Override
     protected void onResume() {
         super.onResume();
         updateWeeklyDistanceUI();
 
+        // Fetch Steps
         if (tvDailyStepsMain != null) {
-            // FIX: Changed StepsCallback to HealthCallback
             healthBridge.readTodaySteps(new HealthConnectBridge.HealthCallback() {
                 @Override
                 public void onSuccess(long totalSteps) {
@@ -130,8 +121,22 @@ public class MainActivity extends AppCompatActivity {
 
                 @Override
                 public void onFailure(String errorMessage) {
-                    // Fail silently so we don't annoy the user if they didn't grant permission
                     tvDailyStepsMain.setText("Settings > Connect Health");
+                }
+            });
+        }
+
+        // NEW: Fetch Calories
+        if (tvDailyCaloriesMain != null) {
+            healthBridge.readTodayCalories(new HealthConnectBridge.HealthCallback() {
+                @Override
+                public void onSuccess(long totalCalories) {
+                    tvDailyCaloriesMain.setText(totalCalories + " CALS Burned Today");
+                }
+
+                @Override
+                public void onFailure(String errorMessage) {
+                    tvDailyCaloriesMain.setText(""); // Fail silently/hide if permissions aren't granted yet
                 }
             });
         }
