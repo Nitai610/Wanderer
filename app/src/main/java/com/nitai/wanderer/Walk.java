@@ -5,8 +5,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-// NOTE FOR BAGRUT: This is our "Model" class in Object-Oriented Programming (OOP).
-// It acts as a blueprint. Every time the user finishes a walk, we create a new 'Walk' object using this blueprint.
 public class Walk {
 
     // ==========================================
@@ -15,45 +13,41 @@ public class Walk {
     public String username;
     public String distance;
     public String time;
-    public String steps; // NOTE: Stores the steps. We use String so it's easy to read straight from the screen's text.
+    public String steps;
+    public String calories; // NEW: Added to track calories burned
     public String date;
 
-    // NOTE FOR BAGRUT: Why do we use a List of HashMaps instead of just a List of Google's 'LatLng' objects?
-    // ANSWER: Cloud Firestore only knows how to save basic data (Strings, Numbers, HashMaps/Dictionaries).
-    // It does NOT know what a Google 'LatLng' object is. So, we must translate Google's complex map points
-    // into simple X/Y number coordinates (HashMaps) before sending them to the cloud.
+    // NOTE FOR BAGRUT: Why HashMaps instead of LatLng?
+    // "Firestore doesn't natively understand Google's LatLng object. I have to translate the complex
+    // GPS coordinates into simple X and Y numbers (HashMaps) so they can be saved in the cloud."
     public List<HashMap<String, Double>> path;
-
-    // NOTE FOR BAGRUT: What does 'static' mean here?
-    // ANSWER: 'static' means this list belongs to the app itself, not to any single walk.
-    // There is only ONE 'walkHistory' list in the entire phone's memory. All screens share this exact same list.
     public static ArrayList<Walk> walkHistory = new ArrayList<>();
 
     // ==========================================
     // --- 2. CONSTRUCTORS ---
     // ==========================================
 
-    // NOTE FOR BAGRUT: Why do we have an empty constructor?
-    // ANSWER: Cloud Firestore REQUIRES an empty constructor. When the app downloads data from the cloud,
-    // Firestore creates a "blank" Walk object first, and then fills in the variables one by one. If you delete this, the app will crash!
+    // NOTE FOR BAGRUT: Why is there an empty constructor?
+    // "Firebase Firestore uses serialization. When it downloads a document, it creates a blank 'Walk' object
+    // first using this empty constructor, and then it fills in the variables one by one. If I delete this, the app crashes."
     public Walk() {
     }
 
-    // NOTE: This is the constructor we use in SummaryActivity when the user clicks "Save Walk".
-    public Walk(String username, String distance, String time, String steps, String date, ArrayList<LatLng> googlePath) {
+    // NOTE: This constructor bundles all the data together when the user finishes a walk.
+    public Walk(String username, String distance, String time, String steps, String calories, String date, ArrayList<LatLng> googlePath) {
         this.username = username;
         this.distance = distance;
         this.time = time;
         this.steps = steps;
+        this.calories = calories;
         this.date = date;
 
-        // NOTE: Here we translate the complex Google Map path into simple HashMaps for the cloud.
         this.path = new ArrayList<>();
         if (googlePath != null) {
             for (LatLng point : googlePath) {
                 HashMap<String, Double> cord = new HashMap<>();
-                cord.put("lat", point.latitude); // Save Latitude (Y axis)
-                cord.put("lng", point.longitude); // Save Longitude (X axis)
+                cord.put("lat", point.latitude);
+                cord.put("lng", point.longitude);
                 this.path.add(cord);
             }
         }
@@ -67,8 +61,9 @@ public class Walk {
     public String getDistance() { return distance; }
     public String getTime() { return time; }
     public String getSteps() { return steps; }
+    public String getCalories() { return calories; }
 
-    // NOTE: When JournalActivity wants to draw the map again, we must translate the simple HashMaps BACK into Google 'LatLng' objects.
+    // NOTE: Translates the HashMaps back into Google LatLng so we can draw the blue line on the map.
     public ArrayList<LatLng> getGooglePath() {
         ArrayList<LatLng> googlePath = new ArrayList<>();
         if (path != null) {

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import kotlinx.coroutines.CoroutineScope
@@ -12,62 +13,77 @@ import kotlinx.coroutines.launch
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 
+// NOTE FOR BAGRUT: Why use a separate Kotlin class for this?
+// "Google's official Health Connect library is written exclusively for Kotlin Coroutines.
+// I created this bridge class so my Java code could easily ask for step and calorie data without breaking compatibility."
 class HealthConnectBridge(private val context: Context) {
 
-    // 1. Connect to the Health Connect app on the user's phone
     private val client: HealthConnectClient? =
         if (HealthConnectClient.getSdkStatus(context) == HealthConnectClient.SDK_AVAILABLE) {
             HealthConnectClient.getOrCreate(context)
         } else null
 
-    // 2. An Interface so our Kotlin code can talk back to our Java code
-    interface StepsCallback {
-        fun onSuccess(totalSteps: Long)
+    interface HealthCallback {
+        fun onSuccess(total: Long)
         fun onFailure(errorMessage: String)
     }
 
-    // 3. Helper to give Java the exact security string it needs
-    fun getStepReadPermission(): String {
-        return HealthPermission.getReadPermission(StepsRecord::class)
+    // NOTE: Tells the system we need both Step and Calorie permissions.
+    fun getRequiredPermissions(): Set<String> {
+        return setOf(
+            HealthPermission.getReadPermission(StepsRecord::class),
+            HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class)
+        )
     }
 
-    // 4. The actual data downloading logic
-    fun readTodaySteps(callback: StepsCallback) {
+    fun readTodaySteps(callback: HealthCallback) {
         if (client == null) {
-            callback.onFailure("Health Connect is not installed on this phone.")
+            callback.onFailure("Health Connect is not installed.")
             return
         }
-
-        // BAGRUT NOTE: Health Connect uses Kotlin Coroutines. This launches a background
-        // thread so the phone doesn't freeze while talking to Google's database.
+        // NOTE FOR BAGRUT: What is CoroutineScope(Dispatchers.IO)?
+        // "It forces the data download to happen on a background thread. If I did this on the Main thread,
+        // the app's UI would freeze completely while waiting for Google's database to respond."
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Get exactly 12:00 AM today to Right Now
                 val startOfDay = Instant.now().truncatedTo(ChronoUnit.DAYS)
-                val rightNow = Instant.now()
-
                 val request = ReadRecordsRequest(
                     recordType = StepsRecord::class,
-                    timeRangeFilter = TimeRangeFilter.between(startOfDay, rightNow)
+                    timeRangeFilter = TimeRangeFilter.between(startOfDay, Instant.now())
                 )
-
                 val response = client.readRecords(request)
                 var totalSteps = 0L
-
-                // Loop through all the walking sessions today and add up the steps
                 for (record in response.records) {
                     totalSteps += record.count
                 }
-
-                // Switch back to the Main UI Thread to update the screen
-                CoroutineScope(Dispatchers.Main).launch {
-                    callback.onSuccess(totalSteps)
-                }
-
+                // NOTE: Switch back to the Main thread so we can safely update the TextViews
+                CoroutineScope(Dispatchers.Main).launch { callback.onSuccess(totalSteps) }
             } catch (e: Exception) {
-                CoroutineScope(Dispatchers.Main).launch {
-                    callback.onFailure(e.message ?: "Unknown Health Connect Error")
+                CoroutineScope(Dispatchers.Main).launch { callback.onFailure(e.message ?: "Error") }
+            }
+        }
+    }
+
+    fun readTodayCalories(callback: HealthCallback) {
+        if (client == null) {
+            callback.onFailure("Health Connect is not installed.")
+            return
+        }
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val startOfDay = Instant.now().truncatedTo(ChronoUnit.DAYS)
+                val request = ReadRecordsRequest(
+                    recordType = TotalCaloriesBurnedRecord::class,
+                    timeRangeFilter = TimeRangeFilter.between(startOfDay, Instant.now())
+                )
+                val response = client.readRecords(request)
+                var totalCalories = 0.0
+                for (record in response.records) {
+                    totalCalories += record.energy.inKilocalories
                 }
+                CoroutineScope(Dispatchers.Main).launch { callback.onSuccess(totalCalories.toLong()) }
+            } catch (e: Exception) {
+                CoroutineScope(Dispatchers.Main).launch { callback.onFailure(e.message ?: "Error") }
             }
         }
     }

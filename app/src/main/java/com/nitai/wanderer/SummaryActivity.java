@@ -9,7 +9,6 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
@@ -18,7 +17,6 @@ import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
@@ -35,25 +33,21 @@ import com.google.firebase.firestore.FirebaseFirestore;
 
 public class SummaryActivity extends AppCompatActivity {
 
-    // --- UI ELEMENTS ---
     TextView tvFinalDistance, tvFinalTime;
     MaterialButton btnSaveWalk, btnDiscardWalk, btnSummaryBack, btnContinueWalk;
     LinearLayout layoutActiveButtons;
 
-    // --- DATA VARIABLES ---
     String finalDistance;
     String finalTime;
     String finalSteps;
+    String finalCalories;
     ArrayList<LatLng> walkPath;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // NOTE: Immersive Mode hides system bars to focus on the map
         WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
-
         setContentView(R.layout.activity_summary);
 
         tvFinalDistance = findViewById(R.id.tvFinalDistance);
@@ -64,57 +58,48 @@ public class SummaryActivity extends AppCompatActivity {
         btnSummaryBack = findViewById(R.id.btnSummaryBack);
         layoutActiveButtons = findViewById(R.id.layoutActiveButtons);
 
-        // NOTE FOR BAGRUT: Why do we check an Intent for an index?
-        // ANSWER: Because we recycle this one screen for TWO different purposes to write less code!
-        // Purpose 1: Viewing an old walk from the Journal list.
-        // Purpose 2: Just finished walking and deciding to save or discard.
+        // NOTE FOR BAGRUT: Why use an index check here?
+        // "I am recycling this single Activity for two different purposes to keep the codebase DRY (Don't Repeat Yourself).
+        // It acts as a post-walk save screen AND a history viewer from the Journal."
         int oldWalkIndex = getIntent().getIntExtra("OLD_WALK_INDEX", -1);
 
         if (oldWalkIndex != -1) {
-            // ==========================================
-            // SCENARIO 1: Viewing an old walk
-            // ==========================================
-            Walk oldWalk = Walk.walkHistory.get(oldWalkIndex); // Grab the walk from RAM
+            // SCENARIO 1: Viewing an old walk from the Journal
+            Walk oldWalk = Walk.walkHistory.get(oldWalkIndex);
             finalDistance = oldWalk.distance;
             finalTime = oldWalk.time;
 
-            // NOTE FOR BAGRUT: We check if steps are null. If we download a very old walk that was created
-            // before we wrote the steps feature, 'oldWalk.steps' will be null. If we try to show null on screen, it crashes.
+            // NOTE FOR BAGRUT: What is backward compatibility?
+            // "I added the steps and calories features later in development. If the user clicks on a walk
+            // saved in January, those variables will be null. This ternary operator prevents a NullPointerException."
             finalSteps = (oldWalk.steps != null) ? oldWalk.steps : "0";
+            finalCalories = (oldWalk.calories != null) ? oldWalk.calories : "0";
 
-            walkPath = oldWalk.getGooglePath(); // Translates the HashMaps back into Google LatLng
+            walkPath = oldWalk.getGooglePath();
 
-            layoutActiveButtons.setVisibility(View.GONE); // Hide Save/Discard/Continue buttons
-            btnSummaryBack.setVisibility(View.VISIBLE); // Show standard Back button
+            layoutActiveButtons.setVisibility(View.GONE);
+            btnSummaryBack.setVisibility(View.VISIBLE);
         } else {
-            // ==========================================
             // SCENARIO 2: Just finished a live walk
-            // ==========================================
             finalDistance = getIntent().getStringExtra("FINAL_DISTANCE");
             finalTime = getIntent().getStringExtra("FINAL_TIME");
             finalSteps = getIntent().getStringExtra("FINAL_STEPS");
+            finalCalories = getIntent().getStringExtra("FINAL_CALORIES");
 
-            // NOTE FOR BAGRUT: EXAMINER EXPLANATION (THE CRASH FIX)
-            // Instead of pulling the GPS path from the Intent (which causes TransactionTooLargeException crashes),
-            // we copy the path directly from the TrackingService's static RAM memory into a new local ArrayList.
+            // Copying the GPS path directly from the RAM variable inside TrackingService
             walkPath = new ArrayList<>(TrackingService.livePath);
 
-            layoutActiveButtons.setVisibility(View.VISIBLE); // Show Save/Discard/Continue buttons
-            btnSummaryBack.setVisibility(View.GONE); // Hide standard Back button
+            layoutActiveButtons.setVisibility(View.VISIBLE);
+            btnSummaryBack.setVisibility(View.GONE);
         }
 
-        // Put the data onto the screen
         tvFinalDistance.setText(finalDistance);
         tvFinalTime.setText(finalTime);
 
-        // Trigger Google Maps to load
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.summaryMap);
-        if (mapFragment != null) {
-            mapFragment.getMapAsync(googleMap -> drawRouteOnMap(googleMap));
-        }
+        if (mapFragment != null) mapFragment.getMapAsync(googleMap -> drawRouteOnMap(googleMap));
 
-        // NOTE: Flawless Resume feature. We send a boolean flag "RESUME_WALK".
-        // TrackingService sees this flag and skips resetting the distance to 0!
+        // NOTE: Flawless Resume feature using an Intent flag
         btnContinueWalk.setOnClickListener(v -> {
             Intent intent = new Intent(SummaryActivity.this, TravelActivity.class);
             intent.putExtra("RESUME_WALK", true);
@@ -122,17 +107,15 @@ public class SummaryActivity extends AppCompatActivity {
             finish();
         });
 
-        // NOTE: Discard uses an AlertDialog to prevent accidental data loss.
         btnDiscardWalk.setOnClickListener(v -> {
             new AlertDialog.Builder(SummaryActivity.this)
                     .setTitle("Discard Walk?")
                     .setMessage("Are you sure you want to throw away this walk? This action cannot be undone.")
                     .setPositiveButton("Discard", (dialog, which) -> {
-                        resetTrackingData(); // Wipe static variables so the next walk starts at 0
+                        resetTrackingData();
                         Toast.makeText(SummaryActivity.this, "Walk Discarded", Toast.LENGTH_SHORT).show();
 
-                        // NOTE: FLAG_ACTIVITY_CLEAR_TOP ensures we don't build a massive stack of open activities.
-                        // It destroys all activities between here and MainActivity.
+                        // NOTE: FLAG_ACTIVITY_CLEAR_TOP wipes all intermediate activities from the backstack
                         Intent homeIntent = new Intent(SummaryActivity.this, MainActivity.class);
                         homeIntent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                         startActivity(homeIntent);
@@ -143,52 +126,48 @@ public class SummaryActivity extends AppCompatActivity {
         });
 
         btnSaveWalk.setOnClickListener(v -> saveWalkToFirestore());
-
         btnSummaryBack.setOnClickListener(v -> finish());
     }
 
     private void saveWalkToFirestore() {
-        btnSaveWalk.setEnabled(false); // NOTE: Prevent multiple clicks/saves while waiting for the server
+        btnSaveWalk.setEnabled(false); // Prevents duplicate spam clicks
         btnSaveWalk.setText("SAVING...");
 
         String currentDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
-        // NOTE: Bagrut Trick - What if the user didn't register a custom username?
-        // We split their email address at the "@" symbol. (e.g., nitai@gmail.com becomes "nitai")
         String currentUsername = user.getDisplayName();
         if (currentUsername == null || currentUsername.isEmpty()) {
-            currentUsername = user.getEmail().split("@")[0];
+            currentUsername = user.getEmail().split("@")[0]; // Fallback to email prefix
         }
 
-        // NOTE: We use the constructor from Walk.java to bundle all this data into one object.
-        Walk completedWalk = new Walk(currentUsername, finalDistance, finalTime, finalSteps, currentDate, walkPath);
+        // Bundle everything into the Walk object using the updated constructor
+        Walk completedWalk = new Walk(currentUsername, finalDistance, finalTime, finalSteps, finalCalories, currentDate, walkPath);
 
-        // Send the Walk object to the Cloud Database
+        // Upload to Cloud Firestore
         FirebaseFirestore.getInstance().collection("users").document(user.getEmail())
                 .collection("walks").add(completedWalk)
                 .addOnSuccessListener(ref -> {
-                    // Success! Add it to the top of our local RAM list so the Journal page updates instantly.
+                    // Update local RAM so the UI refreshes instantly
                     Walk.walkHistory.add(0, completedWalk);
-                    resetTrackingData(); // Clear live counters
-                    finish(); // Close the summary screen
+                    resetTrackingData();
+                    finish();
                 });
     }
 
     private void drawRouteOnMap(GoogleMap googleMap) {
         if (walkPath != null && !walkPath.isEmpty()) {
-            // NOTE: A Polyline is a line that connects dots. We feed it our array of LatLng points to draw the path.
             PolylineOptions line = new PolylineOptions().addAll(walkPath).color(Color.BLUE).width(12f);
             googleMap.addPolyline(line);
-            // Move the camera to the first point of the walk
             googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(walkPath.get(0), 16f));
         }
     }
 
     private void resetTrackingData() {
-        // NOTE: We must clear the static variables so the next walk starts exactly at 0
         TrackingService.liveDistanceInMeters = 0f;
         TrackingService.liveSecondsElapsed = 0;
+        TrackingService.liveStepsTaken = 0;      // NEW: Clear RAM
+        TrackingService.liveCaloriesBurned = 0;  // NEW: Clear RAM
         if (TrackingService.livePath != null) TrackingService.livePath.clear();
     }
 }

@@ -27,6 +27,22 @@
         app:layout_constraintTop_toBottomOf="@id/tvSettingsTitle">
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnConnectHealth"
+            android:layout_width="match_parent"
+            android:layout_height="64dp"
+            android:layout_marginBottom="16dp"
+            android:text="CONNECT HEALTH "
+            android:textColor="#FFFFFF"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            app:backgroundTint="#4CAF50"
+            app:cornerRadius="16dp"
+            app:elevation="2dp"
+            app:icon="@android:drawable/ic_menu_add"
+            app:iconGravity="textStart"
+            app:iconTint="#FFFFFF" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnClearHistory"
             android:layout_width="match_parent"
             android:layout_height="64dp"

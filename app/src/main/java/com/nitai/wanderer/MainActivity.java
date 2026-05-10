@@ -121,7 +121,8 @@ public class MainActivity extends AppCompatActivity {
         updateWeeklyDistanceUI();
 
         if (tvDailyStepsMain != null) {
-            healthBridge.readTodaySteps(new HealthConnectBridge.StepsCallback() {
+            // FIX: Changed StepsCallback to HealthCallback
+            healthBridge.readTodaySteps(new HealthConnectBridge.HealthCallback() {
                 @Override
                 public void onSuccess(long totalSteps) {
                     tvDailyStepsMain.setText(totalSteps + " Steps");
