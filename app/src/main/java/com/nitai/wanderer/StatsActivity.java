@@ -2,16 +2,21 @@ package com.nitai.wanderer;
 
 import android.os.Bundle;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
 
 import com.google.android.material.button.MaterialButton;
+// NEW FIRESTORE IMPORTS
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 public class StatsActivity extends AppCompatActivity {
 
-    // 1. Declare ALL 9 UI elements
     TextView tvStatsWeekly, tvStatsMonthly, tvStatsAllTime;
     TextView tvStatsWeeklyTime, tvStatsMonthlyTime, tvStatsAllTimeTime;
     TextView tvStatsWeeklySteps, tvStatsMonthlySteps, tvStatsAllTimeSteps;
@@ -21,9 +26,6 @@ public class StatsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // NOTE FOR BAGRUT: Immersive Mode!
-        // This code hides the status bar (clock/battery) and navigation bar.
-        // BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE means the user can swipe from the edge to temporarily bring them back.
         WindowInsetsControllerCompat windowInsetsController =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         windowInsetsController.setSystemBarsBehavior(
@@ -32,7 +34,6 @@ public class StatsActivity extends AppCompatActivity {
 
         setContentView(R.layout.activity_stats);
 
-        // 2. View Binding: Connect Java variables to the ID tags in XML
         tvStatsWeekly = findViewById(R.id.tvStatsWeekly);
         tvStatsMonthly = findViewById(R.id.tvStatsMonthly);
         tvStatsAllTime = findViewById(R.id.tvStatsAllTime);
@@ -47,42 +48,62 @@ public class StatsActivity extends AppCompatActivity {
 
         btnStatsBack = findViewById(R.id.btnStatsBack);
 
-        btnStatsBack.setOnClickListener(new android.view.View.OnClickListener() {
-            @Override
-            public void onClick(android.view.View v) {
-                finish(); // Closes the Activity
-            }
-        });
+        btnStatsBack.setOnClickListener(v -> finish());
+
+        // NEW: Load the data from the cloud as soon as the screen is created
+        fetchStatsFromCloud();
     }
 
-    // NOTE FOR BAGRUT: THE ANDROID LIFECYCLE (Important!)
-    // Examiner: "Why did you put the math inside onResume() instead of onCreate()?"
-    // Answer: "onCreate() only runs once when the screen is first built. If the user minimizes the app,
-    // goes for a walk, and comes back, onCreate() won't run again, so the stats would be stale.
-    // onResume() is triggered EVERY SINGLE TIME the screen comes into focus. Putting the math here
-    // guarantees that the user always sees the absolute newest, fresh data."
+    // --- NEW HELPER METHOD: DOWNLOAD CLOUD DATA ---
+    private void fetchStatsFromCloud() {
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+        if (user == null || user.getEmail() == null) return;
+
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+
+        db.collection("users").document(user.getEmail()).collection("walks")
+                .get()
+                .addOnSuccessListener(queryDocumentSnapshots -> {
+                    // Clear local memory before rebuilding from the cloud
+                    Walk.walkHistory.clear();
+
+                    for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
+                        Walk downloadedWalk = document.toObject(Walk.class);
+                        Walk.walkHistory.add(downloadedWalk);
+                    }
+
+                    // Once the data is downloaded, update the UI labels
+                    updateStatsUI();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(StatsActivity.this, "Failed to load stats", Toast.LENGTH_SHORT).show();
+                });
+    }
+
     @Override
     protected void onResume() {
         super.onResume();
+        // Fallback: If data is already in RAM, show it immediately while the cloud fetch runs
+        updateStatsUI();
+    }
 
-        // 3. Grab Distance totals from Walk.java & Set Text
+    // Moved the UI logic into a separate method so it can be called after the Firestore success
+    private void updateStatsUI() {
+        // Distance Totals
         float weeklyTotal = Walk.calculateWeeklyDistance();
         float monthlyTotal = Walk.calculateMonthlyDistance();
         float allTimeTotal = Walk.calculateAllTimeDistance();
 
-        // NOTE: String.format with Locale.US ensures the distance uses a period instead of a comma (e.g., 5.50 KM, not 5,50 KM)
         tvStatsWeekly.setText(String.format(java.util.Locale.US, "%.2f KM", weeklyTotal));
         tvStatsMonthly.setText(String.format(java.util.Locale.US, "%.2f KM", monthlyTotal));
         tvStatsAllTime.setText(String.format(java.util.Locale.US, "%.2f KM", allTimeTotal));
 
-        // 4. Grab Time totals & Set Text
+        // Time Totals
         tvStatsWeeklyTime.setText(Walk.calculateWeeklyDuration());
         tvStatsMonthlyTime.setText(Walk.calculateMonthlyDuration());
         tvStatsAllTimeTime.setText(Walk.calculateAllTimeDuration());
 
-        // 5. Grab Step Totals & Set Text
-        // NOTE: Walk.calculateWeeklySteps() returns an integer (int). We cannot set an 'int' directly to a TextView.
-        // We MUST use String.valueOf() to convert the math number into a String text so Android can display it.
+        // Step Totals
         tvStatsWeeklySteps.setText(String.valueOf(Walk.calculateWeeklySteps()));
         tvStatsMonthlySteps.setText(String.valueOf(Walk.calculateMonthlySteps()));
         tvStatsAllTimeSteps.setText(String.valueOf(Walk.calculateAllTimeSteps()));
