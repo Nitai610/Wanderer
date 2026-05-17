@@ -28,7 +28,7 @@ public class MainActivity extends AppCompatActivity {
 
     // 1. Declare ALL the UI elements
     ImageButton btnProfile, btnSettings;
-    View btnStartWalk, btnJournal, btnStats;
+    View btnStartWalk, btnJournal, btnStats, tvDailyDistanceMain;
     TextView tvWeeklyDistanceMain;
 
     @Override
@@ -48,6 +48,7 @@ public class MainActivity extends AppCompatActivity {
         btnProfile = findViewById(R.id.btnProfile);
         btnSettings = findViewById(R.id.btnSettings);
         tvWeeklyDistanceMain = findViewById(R.id.tvWeeklyDistanceMain);
+        tvDailyDistanceMain = findViewById(R.id.tvDailyDistanceMain);
         btnStartWalk = findViewById(R.id.btnStartWalk);
         btnJournal = findViewById(R.id.btnJournal);
         btnStats = findViewById(R.id.btnStats);
