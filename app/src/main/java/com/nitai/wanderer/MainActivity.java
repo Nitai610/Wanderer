@@ -28,8 +28,8 @@ public class MainActivity extends AppCompatActivity {
 
     // 1. Declare ALL the UI elements
     ImageButton btnProfile, btnSettings;
-    View btnStartWalk, btnJournal, btnStats, tvDailyDistanceMain;
-    TextView tvWeeklyDistanceMain;
+    View btnStartWalk, btnJournal, btnStats;
+    TextView tvWeeklyDistanceMain, tvDailyDistanceMain;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -164,11 +164,19 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // BAGRUT NOTE: Helper method to keep our code clean and avoid repeating the same lines
-    // of formatting code in both onCreate and onResume (DRY Principle - Don't Repeat Yourself).
     private void updateWeeklyDistanceUI() {
+        // 1. Calculate the totals using our Walk.java math engine
         float weeklyTotal = Walk.calculateWeeklyDistance();
+        float dailyTotal = Walk.calculateDailyDistance();
+
+        // 2. Set the text for the Weekly TV
         if (tvWeeklyDistanceMain != null) {
             tvWeeklyDistanceMain.setText(String.format(java.util.Locale.US, "%.2f KM", weeklyTotal));
+        }
+
+        // 3. Set the text for the Daily TV
+        if (tvDailyDistanceMain != null) {
+            tvDailyDistanceMain.setText(String.format(java.util.Locale.US, "%.2f KM", dailyTotal));
         }
     }
 }

@@ -203,4 +203,28 @@ public class Walk {
         }
         return formatSecondsToTimeString(totalSeconds);
     }
+    public static float calculateDailyDistance() {
+        float total = 0f;
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        int currentDay = now.get(java.util.Calendar.DAY_OF_YEAR);
+        int currentYear = now.get(java.util.Calendar.YEAR);
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+
+        for (Walk walk : walkHistory) {
+            try {
+                java.util.Date walkDate = sdf.parse(walk.date);
+                java.util.Calendar walkCal = java.util.Calendar.getInstance();
+                walkCal.setTime(walkDate);
+
+                // Check if the walk happened on the exact same day of the year
+                if (walkCal.get(java.util.Calendar.DAY_OF_YEAR) == currentDay &&
+                        walkCal.get(java.util.Calendar.YEAR) == currentYear) {
+
+                    String numberOnly = walk.distance.replace(" KM", "").replace(",", ".").trim();
+                    total += Float.parseFloat(numberOnly);
+                }
+            } catch (Exception e) { e.printStackTrace(); }
+        }
+        return total;
+    }
 }
