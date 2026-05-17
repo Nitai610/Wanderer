@@ -1,8 +1,10 @@
 package com.nitai.wanderer;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.location.LocationManager;
 import android.os.Bundle;
 import android.provider.Settings;
@@ -11,8 +13,11 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
 import androidx.core.view.WindowCompat;
 import androidx.core.view.WindowInsetsCompat;
 import androidx.core.view.WindowInsetsControllerCompat;
@@ -25,6 +30,9 @@ import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
 public class MainActivity extends AppCompatActivity {
+
+    // Permission ID Tag
+    private static final int LOCATION_PERMISSION_CODE = 1001;
 
     // 1. Declare ALL the UI elements
     ImageButton btnProfile, btnSettings;
@@ -66,7 +74,6 @@ public class MainActivity extends AppCompatActivity {
             return; // Stop the rest of onCreate from running
         }
 
-
         String userEmail = currentUser.getEmail();
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
@@ -105,12 +112,12 @@ public class MainActivity extends AppCompatActivity {
             startActivity(intent);
         });
 
-        // --- THE GPS HARDWARE CHECK ---
+        // --- THE TWO-STEP LOCATION CHECK ---
         btnStartWalk.setOnClickListener(v -> {
 
-            // BAGRUT NOTE: Hardware vs. Software check.
-            // We use LocationManager to check the physical hardware status of the GPS antenna,
-            // not just if the user granted the app "Location Permissions".
+            // BAGRUT NOTE: Two-Step Verification (Hardware + Software).
+            // Step 1: Hardware Check. We use LocationManager to check the physical
+            // hardware status of the GPS antenna.
             LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             boolean isGpsEnabled = false;
 
@@ -118,11 +125,7 @@ public class MainActivity extends AppCompatActivity {
                 isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             }
 
-            if (isGpsEnabled) {
-                // GPS is on! Safe to start the walk.
-                Intent intent = new Intent(MainActivity.this, TravelActivity.class);
-                startActivity(intent);
-            } else {
+            if (!isGpsEnabled) {
                 // GPS is off! Block the user from crashing the map and show a helpful dialog.
                 new AlertDialog.Builder(MainActivity.this)
                         .setTitle("GPS Required")
@@ -139,6 +142,17 @@ public class MainActivity extends AppCompatActivity {
                         })
                         .setNegativeButton("Cancel", null)
                         .show();
+            } else {
+                // Step 2: Software Check. GPS is physically on, but did the user grant us permission to use it?
+                if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                    // Both Hardware AND Software checks passed!
+                    startTravelActivity();
+                } else {
+                    // Permission is missing. Ask the user for it.
+                    ActivityCompat.requestPermissions(MainActivity.this,
+                            new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                            LOCATION_PERMISSION_CODE);
+                }
             }
         });
 
@@ -151,6 +165,31 @@ public class MainActivity extends AppCompatActivity {
             Intent intent = new Intent(MainActivity.this, StatsActivity.class);
             startActivity(intent);
         });
+    }
+
+    // Helper method to actually launch the Travel/Map screen
+    private void startTravelActivity() {
+        Intent intent = new Intent(MainActivity.this, TravelActivity.class);
+        startActivity(intent);
+    }
+
+    // BAGRUT NOTE: Asynchronous Callbacks.
+    // The permission dialog is an Android system popup. This built-in method automatically triggers
+    // the exact moment the user clicks "Allow" or "Deny", letting us react accordingly.
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        if (requestCode == LOCATION_PERMISSION_CODE) {
+            // Check if the array has results and the first result is GRANTED
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // User clicked "Allow"!
+                startTravelActivity();
+            } else {
+                // User clicked "Deny".
+                Toast.makeText(this, "Location permission is required to track your walk.", Toast.LENGTH_SHORT).show();
+            }
+        }
     }
 
     // BAGRUT NOTE: Lifecycle Management.
