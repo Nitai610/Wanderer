@@ -73,4 +73,4 @@ public class StatsActivity extends AppCompatActivity {
         tvStatsMonthlyTime.setText(Walk.calculateMonthlyDuration());
         tvStatsAllTimeTime.setText(Walk.calculateAllTimeDuration());
     }
-}}
+}
