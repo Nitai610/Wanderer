@@ -130,12 +130,18 @@ public class SummaryActivity extends AppCompatActivity {
 
         btnSummaryBack.setOnClickListener(v -> finish());
     }
-
+    
     private void saveWalkToFirestore() {
         btnSaveWalk.setEnabled(false); // Prevent multiple clicks/saves
         btnSaveWalk.setText("SAVING...");
 
+        // 1. Keep the standard date for your 'Walk' object (User sees this)
         String currentDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
+
+        // 2. Create a UNIQUE, Firestore-safe Document ID (Date + Time)
+        // We use hyphens and underscores. NO SLASHES allowed in Firestore Document IDs!
+        String documentId = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(new Date());
+
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 
         // BAGRUT TRICK: If display name is missing, use email prefix
@@ -146,12 +152,19 @@ public class SummaryActivity extends AppCompatActivity {
 
         Walk completedWalk = new Walk(currentUsername, finalDistance, finalTime, currentDate, walkPath);
 
+        // 3. Swap .add() for .document(documentId).set()
         FirebaseFirestore.getInstance().collection("users").document(user.getEmail())
-                .collection("walks").add(completedWalk)
-                .addOnSuccessListener(ref -> {
+                .collection("walks").document(documentId).set(completedWalk)
+                .addOnSuccessListener(aVoid -> { // Note: ref becomes aVoid when using .set()
                     Walk.walkHistory.add(0, completedWalk); // Add to top of local list
                     resetTrackingData(); // Clear live counters
                     finish();
+                })
+                .addOnFailureListener(e -> {
+                    // Good practice: re-enable the button if the upload fails
+                    btnSaveWalk.setEnabled(true);
+                    btnSaveWalk.setText("SAVE");
+                    Toast.makeText(SummaryActivity.this, "Error saving to cloud", Toast.LENGTH_SHORT).show();
                 });
     }
 
