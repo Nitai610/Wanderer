@@ -89,7 +89,7 @@ public class LoginActivity extends AppCompatActivity {
                         } else {
                             // NOTE: Failed! They either typed the wrong password, or the account doesn't exist.
                             // We use a generic error message here so hackers don't know if they guessed a correct email or not.
-                            Toast.makeText(LoginActivity.this, "Login Failed. Check credentials.", Toast.LENGTH_SHORT).show();
+                            Toast.makeText(LoginActivity.this, "Login Failed. Check spellnigs.", Toast.LENGTH_SHORT).show();
                         }
                     });
         });
