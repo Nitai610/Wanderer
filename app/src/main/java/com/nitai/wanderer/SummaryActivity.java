@@ -130,7 +130,6 @@ public class SummaryActivity extends AppCompatActivity {
 
         btnSummaryBack.setOnClickListener(v -> finish());
     }
-    
     private void saveWalkToFirestore() {
         btnSaveWalk.setEnabled(false); // Prevent multiple clicks/saves
         btnSaveWalk.setText("SAVING...");
