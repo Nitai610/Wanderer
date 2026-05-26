@@ -29,18 +29,24 @@ import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
 
+// EXPLANATION: MainActivity usually serves as the "Dashboard" or "Hub" of an app.
+// It inherits from AppCompatActivity, giving it all the standard Android screen behaviors.
 public class MainActivity extends AppCompatActivity {
 
     // Permission ID Tag
+    // EXPLANATION: When we ask Android for a permission, it handles the popup and gets back to us later.
+    // We pass this unique ID number (1001) so that when Android replies, we know exactly WHICH question it's answering.
     private static final int LOCATION_PERMISSION_CODE = 1001;
 
     // 1. Declare ALL the UI elements
+    // EXPLANATION: Creating empty variables in memory to hold the visual elements from the XML.
     ImageButton btnProfile, btnSettings;
     View btnStartWalk, btnJournal, btnStats;
     TextView tvWeeklyDistanceMain, tvDailyDistanceMain;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // EXPLANATION: The super call is mandatory. It tells the Android OS to do its fundamental background setup for this screen first.
         super.onCreate(savedInstanceState);
 
         // --- IMMERSIVE MODE ---
@@ -50,9 +56,11 @@ public class MainActivity extends AppCompatActivity {
         windowInsetsController.setSystemBarsBehavior(WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
 
+        // EXPLANATION: This inflates the XML design file and actually draws the buttons and text onto the user's physical screen.
         setContentView(R.layout.activity_main);
 
         // 2. Connect Java to the XML IDs
+        // EXPLANATION: We link the empty Java variables to the actual visual components created by setContentView.
         btnProfile = findViewById(R.id.btnProfile);
         btnSettings = findViewById(R.id.btnSettings);
         tvWeeklyDistanceMain = findViewById(R.id.tvWeeklyDistanceMain);
@@ -62,7 +70,9 @@ public class MainActivity extends AppCompatActivity {
         btnStats = findViewById(R.id.btnStats);
 
         // --- SECURITY & DATA LOADING ---
+        // EXPLANATION: Retrieves the active session manager.
         FirebaseAuth mAuth = FirebaseAuth.getInstance();
+        // EXPLANATION: Retrieves the specific user currently logged in (contains their email, UID, etc.).
         FirebaseUser currentUser = mAuth.getCurrentUser();
 
         // BAGRUT NOTE: Security Check (Defensive Programming).
@@ -70,20 +80,23 @@ public class MainActivity extends AppCompatActivity {
         // we immediately kick them back to LoginActivity to protect the app from crashing.
         if (currentUser == null) {
             startActivity(new Intent(this, LoginActivity.class));
-            finish();
+            finish(); // EXPLANATION: Destroys MainActivity completely so they can't press 'Back' to bypass the login screen.
             return; // Stop the rest of onCreate from running
         }
 
         String userEmail = currentUser.getEmail();
+        // EXPLANATION: Initializes the connection to the Firestore Database engine.
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
         // BAGRUT NOTE: Asynchronous Cloud Fetching.
         // We use `.get().addOnSuccessListener()` so the app's UI doesn't freeze while waiting
         // for Google's servers to respond. It runs in the background and triggers when ready.
+        // EXPLANATION: The path here navigates deep into the database: Collection(users) -> Document(Specific Email) -> Collection(walks).
         db.collection("users").document(userEmail).collection("walks")
                 .get()
                 .addOnSuccessListener(queryDocumentSnapshots -> {
                     // 1. Clear the local RAM so we don't accidentally duplicate data if it reloads
+                    // EXPLANATION: Without this, every time you open MainActivity, it would append the same walks to the list again, doubling your stats!
                     Walk.walkHistory.clear();
 
                     // 2. Loop through every single document downloaded from the cloud
@@ -102,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
                 });
 
         // --- BUTTON CLICKS ---
+        // EXPLANATION: Lambda expressions (v ->) handle user taps, using Intents to navigate to different screens.
         btnProfile.setOnClickListener(v -> {
             Intent intent = new Intent(MainActivity.this, ProfileActivity.class);
             startActivity(intent);
@@ -118,15 +132,19 @@ public class MainActivity extends AppCompatActivity {
             // BAGRUT NOTE: Two-Step Verification (Hardware + Software).
             // Step 1: Hardware Check. We use LocationManager to check the physical
             // hardware status of the GPS antenna.
+            // EXPLANATION: getSystemService allows us to access core Android OS hardware managers.
             LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
             boolean isGpsEnabled = false;
 
+            // EXPLANATION: Always check if managers are null to prevent NullPointerExceptions.
             if (locationManager != null) {
+                // EXPLANATION: Asks the OS: "Is the physical GPS chip currently turned on by the user?"
                 isGpsEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
             }
 
             if (!isGpsEnabled) {
                 // GPS is off! Block the user from crashing the map and show a helpful dialog.
+                // EXPLANATION: AlertDialog is a built-in UI tool for critical popups that require user attention.
                 new AlertDialog.Builder(MainActivity.this)
                         .setTitle("GPS Required")
                         .setMessage("Your phone's GPS is currently turned off. You must enable Location Services to track a walk.")
@@ -136,19 +154,23 @@ public class MainActivity extends AppCompatActivity {
                                 // BAGRUT NOTE: System Intents.
                                 // Instead of making the user dig through their phone manually,
                                 // this Intent teleports them directly to the native Android Location Settings!
+                                // EXPLANATION: This is an "Implicit Intent". We aren't opening our own screen, we are asking Android to open a specific system menu.
                                 Intent intent = new Intent(Settings.ACTION_LOCATION_SOURCE_SETTINGS);
                                 startActivity(intent);
                             }
                         })
-                        .setNegativeButton("Cancel", null)
+                        .setNegativeButton("Cancel", null) // EXPLANATION: Passing 'null' means it will just dismiss the dialog and do nothing else.
                         .show();
             } else {
                 // Step 2: Software Check. GPS is physically on, but did the user grant us permission to use it?
+                // EXPLANATION: Android 6.0+ requires apps to ask for "Dangerous Permissions" (like location, camera) at runtime, not just during install.
                 if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
                     // Both Hardware AND Software checks passed!
                     startTravelActivity();
                 } else {
                     // Permission is missing. Ask the user for it.
+                    // EXPLANATION: This triggers the standard Android system popup saying "Allow Wanderer to access this device's location?".
+                    // We pass LOCATION_PERMISSION_CODE so we can recognize the answer later.
                     ActivityCompat.requestPermissions(MainActivity.this,
                             new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
                             LOCATION_PERMISSION_CODE);
@@ -168,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // Helper method to actually launch the Travel/Map screen
+    // EXPLANATION: Isolating this into a helper method prevents us from writing the exact same Intent code twice.
     private void startTravelActivity() {
         Intent intent = new Intent(MainActivity.this, TravelActivity.class);
         startActivity(intent);
@@ -178,15 +201,19 @@ public class MainActivity extends AppCompatActivity {
     // the exact moment the user clicks "Allow" or "Deny", letting us react accordingly.
     @Override
     public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        // EXPLANATION: We must call the super method so the OS can do its own internal cleanup regarding permissions.
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
 
+        // EXPLANATION: Check if this reply belongs to the Location question we asked earlier (using our ID 1001).
         if (requestCode == LOCATION_PERMISSION_CODE) {
             // Check if the array has results and the first result is GRANTED
+            // EXPLANATION: grantResults is an array because you can ask for multiple permissions at once. Since we only asked for one, we check index [0].
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 // User clicked "Allow"!
                 startTravelActivity();
             } else {
                 // User clicked "Deny".
+                // EXPLANATION: We fail gracefully. The app doesn't crash, we just tell the user why nothing happened.
                 Toast.makeText(this, "Location permission is required to track your walk.", Toast.LENGTH_SHORT).show();
             }
         }
@@ -198,6 +225,8 @@ public class MainActivity extends AppCompatActivity {
     // the moment the user returns from finishing a walk in TravelActivity.
     @Override
     protected void onResume() {
+        // EXPLANATION: The Activity Lifecycle goes: onCreate -> onStart -> onResume.
+        // When you come back from another screen, it skips onCreate and jumps straight to onResume.
         super.onResume();
         updateWeeklyDistanceUI();
     }
@@ -210,6 +239,8 @@ public class MainActivity extends AppCompatActivity {
 
         // 2. Set the text for the Weekly TV
         if (tvWeeklyDistanceMain != null) {
+            // EXPLANATION: String.format handles the text layout. "%.2f" means "take the floating-point number, and format it to show exactly 2 decimal places".
+            // Locale.US ensures that the decimal point is a dot (.) and not a comma (,) to prevent crashes in Hebrew/European phones.
             tvWeeklyDistanceMain.setText(String.format(java.util.Locale.US, "%.2f KM", weeklyTotal));
         }
 

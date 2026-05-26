@@ -19,13 +19,16 @@ import com.google.android.material.button.MaterialButton;
 import com.google.android.material.textfield.TextInputEditText;
 
 // FIREBASE IMPORTS
+// EXPLANATION: AuthCredential and EmailAuthProvider are used for the advanced security step (forcing the user to re-enter their password).
 import com.google.firebase.auth.AuthCredential;
 import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+// EXPLANATION: UserProfileChangeRequest is a special builder Google provides to update core account details (like the display name or profile picture URL).
 import com.google.firebase.auth.UserProfileChangeRequest;
 import com.google.firebase.firestore.FirebaseFirestore;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+// EXPLANATION: WriteBatch allows us to group multiple database changes together and execute them simultaneously.
 import com.google.firebase.firestore.WriteBatch;
 
 public class ProfileActivity extends AppCompatActivity {
@@ -41,6 +44,7 @@ public class ProfileActivity extends AppCompatActivity {
 
         // --- IMMERSIVE MODE ---
         // Hides the status bar and navigation bar for a clean, modern look
+        // EXPLANATION: This manipulates the system window to push the app UI all the way to the physical edges of the screen.
         WindowInsetsControllerCompat windowInsetsController =
                 WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         windowInsetsController.setSystemBarsBehavior(
@@ -60,12 +64,14 @@ public class ProfileActivity extends AppCompatActivity {
 
         // --- INITIALIZE DATA ---
         // Load the user's email and username from Firebase
+        // EXPLANATION: Calling our custom helper method right away so the profile looks complete the second the screen loads.
         loadProfileData();
 
         // --- BUTTON LOGIC: OPEN LEADERBOARD ---
         btnOpenLeaderboard.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // EXPLANATION: A standard Intent to transition from the Profile to the Leaderboard.
                 Intent intent = new Intent(ProfileActivity.this, LeaderboardActivity.class);
                 startActivity(intent);
             }
@@ -75,6 +81,7 @@ public class ProfileActivity extends AppCompatActivity {
         btnEditUsername.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // EXPLANATION: Triggers the complex security and updating process defined at the bottom of the file.
                 showEditUsernameDialog();
             }
         });
@@ -92,20 +99,25 @@ public class ProfileActivity extends AppCompatActivity {
     // Grabs the DisplayName and Email from Firebase Authentication
     private void loadProfileData() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
+        // EXPLANATION: Always perform null checks when dealing with user sessions to prevent the app from crashing if they somehow got logged out.
         if (currentUser != null && currentUser.getEmail() != null) {
             String fullEmail = currentUser.getEmail();
 
             // Try to get their custom saved username first
+            // EXPLANATION: .getDisplayName() reads the profile metadata attached to the Auth account.
             String username = currentUser.getDisplayName();
 
             // BAGRUT TRICK: If they haven't set a username yet, generate one from their email!
             // We split "nitai@gmail.com" at the "@" symbol and take the first part ("nitai").
             if (username == null || username.isEmpty()) {
+                // EXPLANATION: .split("@") breaks the string into a list of strings using the @ as the cut point. Index [0] grabs the left side.
                 username = fullEmail.split("@")[0];
                 // Capitalize the first letter for a polished look
+                // EXPLANATION: .substring(0, 1) isolates the very first letter. .toUpperCase() capitalizes it. .substring(1) grabs the rest of the name as it was.
                 username = username.substring(0, 1).toUpperCase() + username.substring(1);
             }
 
+            // EXPLANATION: Finally, push the processed text to the physical screen.
             tvProfileUsername.setText(username);
             tvProfileEmail.setText(fullEmail);
         }
@@ -119,11 +131,13 @@ public class ProfileActivity extends AppCompatActivity {
         super.onResume();
 
         // Calculate totals using our existing math engine in Walk.java
+        // EXPLANATION: Accessing static methods from the Walk class. This shows great architecture because you aren't rewriting math logic in multiple files.
         float allTimeDistance = Walk.calculateAllTimeDistance();
         String allTimeDuration = Walk.calculateAllTimeDuration();
 
         // Put the calculated data onto the screen
         if (tvProfileTotalDistance != null && tvProfileTotalTime != null) {
+            // EXPLANATION: Formatting the float back to a readable string with two decimal places.
             tvProfileTotalDistance.setText(String.format(java.util.Locale.US, "%.2f KM", allTimeDistance));
             tvProfileTotalTime.setText(allTimeDuration);
         }
@@ -136,17 +150,19 @@ public class ProfileActivity extends AppCompatActivity {
         if (currentUser == null) return;
 
         // 1. Build a custom layout for the Popup Dialog dynamically in Java
+        // EXPLANATION: Instead of creating a whole new XML file for a simple popup, you are building the UI programmatically in Java!
         LinearLayout layout = new LinearLayout(this);
-        layout.setOrientation(LinearLayout.VERTICAL);
-        layout.setPadding(50, 40, 50, 10);
+        layout.setOrientation(LinearLayout.VERTICAL); // EXPLANATION: Stacks the text boxes one on top of the other.
+        layout.setPadding(50, 40, 50, 10); // EXPLANATION: Adds breathing room (Left, Top, Right, Bottom).
 
         TextInputEditText etNewUsername = new TextInputEditText(this);
         etNewUsername.setHint("Enter New Username");
-        layout.addView(etNewUsername);
+        layout.addView(etNewUsername); // EXPLANATION: Injects the text box into the layout.
 
         TextInputEditText etPassword = new TextInputEditText(this);
         etPassword.setHint("Enter Current Password");
         // Security: Mask the password input with dots
+        // EXPLANATION: This uses bitwise operators (|) to tell Android: "This is a text field, AND specifically format it like a secret password."
         etPassword.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
         layout.addView(etPassword);
 
@@ -154,7 +170,7 @@ public class ProfileActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Change Username")
                 .setMessage("For your security, please verify your password to change your username.")
-                .setView(layout)
+                .setView(layout) // EXPLANATION: Here is where you attach the custom LinearLayout you just built above to the Dialog.
                 .setPositiveButton("Update", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
@@ -169,16 +185,19 @@ public class ProfileActivity extends AppCompatActivity {
 
                         // 3. SECURITY RE-AUTHENTICATION
                         // Create a secure token using their email and the password they just typed
+                        // EXPLANATION: Firebase has a security feature where sensitive actions (changing email, password, or profile) fail if the user logged in a long time ago. This generates a fresh "key".
                         AuthCredential credential = EmailAuthProvider.getCredential(currentUser.getEmail(), password);
 
                         // Send the token to Google's servers to verify
                         currentUser.reauthenticate(credential).addOnCompleteListener(task -> {
                             if (task.isSuccessful()) {
                                 // 4. Password verified! Send the new DisplayName to Firebase.
+                                // EXPLANATION: We construct the package of profile updates we want to push to the cloud.
                                 UserProfileChangeRequest profileUpdates = new UserProfileChangeRequest.Builder()
                                         .setDisplayName(newUsername)
                                         .build();
 
+                                // EXPLANATION: Actually executing the update on the Authentication engine.
                                 currentUser.updateProfile(profileUpdates).addOnCompleteListener(updateTask -> {
                                     if (updateTask.isSuccessful()) {
                                         Toast.makeText(ProfileActivity.this, "Username updated!", Toast.LENGTH_SHORT).show();
@@ -189,20 +208,25 @@ public class ProfileActivity extends AppCompatActivity {
                                         String userEmail = currentUser.getEmail();
 
                                         // Find all past walks belonging to this user
+                                        // EXPLANATION: If we only change the Auth profile, the leaderboard will still show the old name because the historical Firestore documents have the old name hardcoded in them.
                                         db.collection("users").document(userEmail).collection("walks")
                                                 .get()
                                                 .addOnSuccessListener(queryDocumentSnapshots -> {
                                                     // A WriteBatch lets us update multiple cloud documents at the exact same time
+                                                    // EXPLANATION: A "Batch" is an atomic operation. It means "Do all of these updates at once, or fail them all". It's highly efficient and prevents corrupted databases.
                                                     WriteBatch batch = db.batch();
 
                                                     for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
                                                         // Queue up an update for the "username" field on every old walk
+                                                        // EXPLANATION: document.getReference() is the exact cloud URL for that specific walk.
                                                         batch.update(document.getReference(), "username", newUsername);
                                                     }
 
                                                     // Execute the massive update
+                                                    // EXPLANATION: The changes sit in a waiting room until you call .commit(), which fires them all off to Google at the exact same moment.
                                                     batch.commit().addOnSuccessListener(aVoid -> {
                                                         // Update the local RAM memory too so it matches instantly
+                                                        // EXPLANATION: We loop through our static list and manually update the variables so the user doesn't have to restart the app to see the changes.
                                                         for (Walk walk : Walk.walkHistory) {
                                                             walk.username = newUsername;
                                                         }

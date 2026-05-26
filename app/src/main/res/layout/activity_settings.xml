@@ -33,18 +33,6 @@ android:background="#F4F5F7"> <!-- Soft modern gray background matches other pag
     <!-- NEW: TEST NOTIFICATION BUTTON -->
 
     <!-- NEW: CLEAR HISTORY BUTTON -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnTestNotification"
-        android:layout_width="match_parent"
-        android:layout_height="64dp"
-        android:layout_marginBottom="16dp"
-        android:text="TEST NOTIFICATION"
-        android:textColor="#FFFFFF"
-        android:textSize="16sp"
-        android:textStyle="bold"
-        app:backgroundTint="#1E104E"
-        app:cornerRadius="16dp"
-        app:elevation="2dp" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnClearHistory"
