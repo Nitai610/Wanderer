@@ -102,18 +102,6 @@
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Forgot Password Link -->
-        <TextView
-            android:id="@+id/tvForgotPassword"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:layout_marginEnd="32dp"
-            android:text="Forgot Password?"
-            android:textColor="#1976D2"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/passwordInputLayout" />
 
         <!-- Blue Login Button -->
         <com.google.android.material.button.MaterialButton
@@ -121,7 +109,6 @@
             android:layout_width="match_parent"
             android:layout_height="60dp"
             android:layout_marginHorizontal="32dp"
-            android:layout_marginTop="40dp"
             android:text="LOGIN"
             android:textSize="18sp"
             android:textStyle="bold"
@@ -129,7 +116,7 @@
             app:cornerRadius="12dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tvForgotPassword" />
+            tools:layout_editor_absoluteY="416dp" />
 
         <!-- "Don't have an account" Section -->
         <LinearLayout
