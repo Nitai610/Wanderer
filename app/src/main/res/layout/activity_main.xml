@@ -26,8 +26,8 @@ tools:context=".MainActivity">
     android:id="@+id/tvAppTitle"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:fontFamily="sans-serif-black"
-    android:text="TRAVELER 2000"
+    android:fontFamily="@font/nigfont"
+    android:text="Wanderer 9000"
     android:textColor="#212121"
     android:textSize="22sp"
     app:layout_constraintBottom_toBottomOf="@+id/btnProfile"
@@ -50,124 +50,145 @@ tools:context=".MainActivity">
     app:tint="#333333" />
 
 <!-- Weekly Stats Card -->
-<com.google.android.material.card.MaterialCardView
-    android:id="@+id/cardWeeklyStats"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginHorizontal="24dp"
-    android:layout_marginTop="40dp"
-    app:cardBackgroundColor="#FFFFFF"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="6dp"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/tvAppTitle">
-
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/cardWeeklyStats"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:baselineAligned="false"
-        android:orientation="horizontal"
-        android:paddingVertical="24dp">
-
-
-
+        android:layout_marginHorizontal="24dp"
+        android:layout_marginTop="40dp"
+        app:cardBackgroundColor="#FFFFFF"
+        app:cardCornerRadius="16dp"
+        app:cardElevation="6dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvAppTitle">
 
         <LinearLayout
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_menu_mylocation"
-                app:tint="#1976D2" />
+            android:orientation="vertical"
+            android:paddingTop="20dp"
+            android:paddingBottom="24dp">
 
             <TextView
-                android:id="@+id/tvWeeklyDistanceMain"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="0.00 KM"
-                android:textColor="#212121"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                android:fontFamily="@font/nigfont"
+                android:gravity="center"
+                android:letterSpacing="0.12"
+                android:text="OVERVIEW"
+                android:textColor="#121212"
+                android:textSize="25sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="24dp"
+                android:layout_marginTop="5dp"
+                />
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="THIS WEEK"
-                android:textColor="#9E9E9E"
-                android:textSize="12sp"
-                android:textStyle="bold" />
+                android:baselineAligned="false"
+                android:orientation="horizontal">
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/ic_menu_mylocation"
+                        app:tint="#1976D2" />
+
+                    <TextView
+                        android:id="@+id/tvWeeklyDistanceMain"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="0.00 KM"
+                        android:textColor="#212121"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="THIS WEEK"
+                        android:textColor="#9E9E9E"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginVertical="8dp"
+                    android:background="#EEEEEE" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical">
+
+                    <ImageView
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@android:drawable/ic_menu_directions"
+                        app:tint="#FFB300" />
+
+                    <TextView
+                        android:id="@+id/tvDailyDistanceMain"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="0.00 KM"
+                        android:textColor="#212121"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TODAY"
+                        android:textColor="#9E9E9E"
+                        android:textSize="12sp"
+                        android:textStyle="bold" />
+                </LinearLayout>
+
+            </LinearLayout>
         </LinearLayout>
-
-        <View
-            android:layout_width="1dp"
-            android:layout_height="match_parent"
-            android:layout_marginVertical="8dp"
-            android:background="#EEEEEE" />
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:gravity="center"
-            android:orientation="vertical">
-
-            <ImageView
-                android:layout_width="32dp"
-                android:layout_height="32dp"
-                android:src="@android:drawable/ic_menu_directions"
-                app:tint="#FFB300" />
-
-            <TextView
-                android:id="@+id/tvDailyDistanceMain"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="0.00 KM"
-                android:textColor="#212121"
-                android:textSize="22sp"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="TODAY"
-                android:textColor="#9E9E9E"
-                android:textSize="12sp"
-                android:textStyle="bold" />
-        </LinearLayout>
-
-    </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+    </com.google.android.material.card.MaterialCardView>
 
 <!-- Secondary Buttons (Journal & Stats) -->
-<com.google.android.material.button.MaterialButton
-    android:id="@+id/btnJournal"
-    style="@style/Widget.MaterialComponents.Button.OutlinedButton"
-    android:layout_width="match_parent"
-    android:layout_height="60dp"
-    android:layout_marginHorizontal="32dp"
-    android:layout_marginTop="60dp"
-    android:text="MY JOURNAL"
-    android:textColor="#333333"
-    android:textSize="16sp"
-    android:textStyle="bold"
-    app:cornerRadius="12dp"
-    app:icon="@drawable/calendar_clock_icon"
-    app:iconTint="#333333"
-    app:layout_constraintEnd_toEndOf="parent"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toBottomOf="@id/cardWeeklyStats"
-    app:strokeColor="#BDBDBD"
-    app:strokeWidth="2dp" />
 
-<!-- Primary Action: Start Travel Button -->
-<com.google.android.material.button.MaterialButton
+    <!-- Primary Action: Start Travel Button -->
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnJournal"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:layout_marginHorizontal="32dp"
+        android:layout_marginTop="60dp"
+        android:text="MY JOURNAL"
+        android:textColor="#333333"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:cornerRadius="12dp"
+        app:icon="@drawable/calendar_clock_icon"
+        app:iconTint="#333333"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cardWeeklyStats"
+        app:strokeColor="#BDBDBD"
+        app:strokeWidth="2dp" />
+
+    <com.google.android.material.button.MaterialButton
     android:id="@+id/btnStats"
     style="@style/Widget.MaterialComponents.Button.OutlinedButton"
     android:layout_width="match_parent"

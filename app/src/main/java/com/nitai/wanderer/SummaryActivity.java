@@ -152,13 +152,12 @@ public class SummaryActivity extends AppCompatActivity {
         btnSaveWalk.setText("SAVING...");
 
         // 1. Keep the standard date for your 'Walk' object (User sees this)
-        String currentDate = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(new Date());
-
+        String currentDate = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
         // 2. Create a UNIQUE, Firestore-safe Document ID (Date + Time)
         // We use hyphens and underscores. NO SLASHES allowed in Firestore Document IDs!
         // EXPLANATION: In Firestore, slashes ("/") are used to define the file path (Collection / Document / Collection).
         // If a document ID contains a slash, Firestore gets confused and thinks you are trying to create a new subcollection. This avoids that crash.
-        String documentId = new SimpleDateFormat("yyyy-MM-dd_HH-mm-ss", Locale.getDefault()).format(new Date());
+        String documentId = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault()).format(new Date());
 
         FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
 

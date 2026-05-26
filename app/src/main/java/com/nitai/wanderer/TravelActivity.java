@@ -48,12 +48,23 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_travel); // This line draws the screen
+
+        // 1. Check if the device is running Android 13 (Tiramisu) or higher
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+
+            // 2. Check if the user has ALREADY granted us this permission in the past
+            if (androidx.core.content.ContextCompat.checkSelfPermission(this, android.Manifest.permission.POST_NOTIFICATIONS) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+
+                // 3. If not, pop up the system dialog asking the user for permission
+                androidx.core.app.ActivityCompat.requestPermissions(this, new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 101);
+            }
+        }
 
         // Immersive Mode
         WindowInsetsControllerCompat windowInsetsController = WindowCompat.getInsetsController(getWindow(), getWindow().getDecorView());
         windowInsetsController.hide(WindowInsetsCompat.Type.systemBars());
 
-        setContentView(R.layout.activity_travel);
 
         tvLiveDistance = findViewById(R.id.tvLiveDistance);
         tvLiveTimer = findViewById(R.id.tvLiveTimer);

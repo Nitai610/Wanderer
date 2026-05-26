@@ -61,7 +61,7 @@ public class WalkAdapter extends RecyclerView.Adapter<WalkAdapter.WalkViewHolder
         Walk currentWalk = walks.get(position);
 
         // Put the text data onto the screen
-        holder.tvWalkDate.setText(currentWalk.getDate());
+        holder.tvWalkDate.setText(currentWalk.getDate().substring(0, 10));
         String combinedStats = currentWalk.getDistance() + "     " + currentWalk.getTime();
         holder.tvWalkStats.setText(combinedStats);
 

@@ -20,7 +20,7 @@ import com.google.firebase.auth.FirebaseAuth;
 public class LoginActivity extends AppCompatActivity {
 
     // EXPLANATION: Declaring the UI variables globally so they can be accessed anywhere within this class.
-    MaterialButton btnLogin, btnBack;
+    MaterialButton btnLogin;
     TextView tvRegisterLink;
     TextInputEditText etUsername, etPassword;
 
@@ -44,7 +44,6 @@ public class LoginActivity extends AppCompatActivity {
         // NOTE: Connecting Java variables to XML elements
         // EXPLANATION: findViewById searches the XML layout for the specific ID and links it to our Java variable so we can control it via code.
         btnLogin = findViewById(R.id.btnLogin);
-        btnBack = findViewById(R.id.btnBack);
         tvRegisterLink = findViewById(R.id.tvRegisterLink);
         etUsername = findViewById(R.id.etUsername);
         etPassword = findViewById(R.id.etPassword);
@@ -53,13 +52,6 @@ public class LoginActivity extends AppCompatActivity {
         // EXPLANATION: .getInstance() uses the Singleton pattern. It fetches the one, single active instance of the Firebase engine running in your app.
         mAuth = FirebaseAuth.getInstance();
 
-        btnBack.setOnClickListener(v -> {
-            // EXPLANATION: An Intent is a formal request to the Android OS to transition from one screen to another.
-            Intent intent = new Intent(LoginActivity.this, MainActivity.class);
-            startActivity(intent);
-            // EXPLANATION: finish() destroys this specific screen from the device's RAM, ensuring a clean back-stack.
-            finish();
-        });
 
         tvRegisterLink.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);

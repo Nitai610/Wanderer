@@ -133,7 +133,7 @@ public class JournalActivity extends AppCompatActivity {
                     // into real Date objects, compares them, and pushes the newest dates to the top (index 0)."
 
                     // EXPLANATION: Defines how our dates are written textually. This gives the parser a map to interpret days, months, and years.
-                    SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault());
+                    SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.getDefault());
 
                     // EXPLANATION: Uses Java's built-in collection utility to sort our array list dynamically using a custom sorting blueprint (Comparator).
                     Collections.sort(Walk.walkHistory, new Comparator<Walk>() {

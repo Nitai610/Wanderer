@@ -149,7 +149,7 @@ public class Walk {
         int currentYear = now.get(java.util.Calendar.YEAR);         // Extracts the current numerical calendar year (e.g., 2026)
 
         // Formatter pattern instructing Java how to read our string dates (dd=day, MM=month, yyyy=year)
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
 
         for (Walk walk : walkHistory) {
             try {
@@ -178,7 +178,7 @@ public class Walk {
         java.util.Calendar now = java.util.Calendar.getInstance();
         int currentWeek = now.get(java.util.Calendar.WEEK_OF_YEAR); // Extracts the specific week index number out of the 52 weeks in a year
         int currentYear = now.get(java.util.Calendar.YEAR);
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
 
         for (Walk walk : walkHistory) {
             try {
@@ -266,7 +266,7 @@ public class Walk {
         java.util.Calendar now = java.util.Calendar.getInstance();
         int currentMonth = now.get(java.util.Calendar.MONTH);
         int currentYear = now.get(java.util.Calendar.YEAR);
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
 
         for (Walk walk : walkHistory) {
             try {
@@ -292,7 +292,7 @@ public class Walk {
         java.util.Calendar now = java.util.Calendar.getInstance();
         int currentWeek = now.get(java.util.Calendar.WEEK_OF_YEAR);
         int currentYear = now.get(java.util.Calendar.YEAR);
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
 
         for (Walk walk : walkHistory) {
             try {
@@ -317,7 +317,7 @@ public class Walk {
         java.util.Calendar now = java.util.Calendar.getInstance();
         int currentDay = now.get(java.util.Calendar.DAY_OF_YEAR); // Returns the day index out of 365 days in a year (e.g., Feb 1st = day 32)
         int currentYear = now.get(java.util.Calendar.YEAR);
-        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("dd/MM/yyyy", java.util.Locale.getDefault());
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
 
         for (Walk walk : walkHistory) {
             try {
