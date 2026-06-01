@@ -22,7 +22,7 @@ public class RegisterActivity extends AppCompatActivity {
 
     // EXPLANATION: Declaring variables (creating the empty boxes).
     // These are 'global' variables for this screen, meaning any part of this class can use them.
-    MaterialButton btnBack, btnRegisterSubmit;
+    MaterialButton btnRegisterSubmit;
     TextView tvLoginLink;
     TextInputEditText etRegisterUsername, etRegisterPassword, etConfirmPassword;
 
@@ -49,7 +49,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         // NOTE: Connecting our Java variables to the visual elements in the XML design.
         // EXPLANATION: R.id is a map of all your XML elements. We are finding the specific ID and putting it into our Java variable.
-        btnBack = findViewById(R.id.btnBack);
         btnRegisterSubmit = findViewById(R.id.btnRegisterSubmit);
         tvLoginLink = findViewById(R.id.tvLoginLink);
         etRegisterUsername = findViewById(R.id.etRegisterUsername);
@@ -62,7 +61,6 @@ public class RegisterActivity extends AppCompatActivity {
 
         // NOTE: Simple navigation buttons. 'finish()' simply closes this screen and goes back.
         // EXPLANATION: 'v ->' is a Lambda expression. It is a modern, short way to say "When this view is clicked, do the following:"
-        btnBack.setOnClickListener(v -> finish());
         tvLoginLink.setOnClickListener(v -> finish());
 
         // --- FIREBASE REGISTRATION LOGIC ---
