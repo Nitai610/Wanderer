@@ -25,7 +25,7 @@ import com.google.firebase.firestore.WriteBatch;
 public class SettingsActivity extends AppCompatActivity {
 
     // EXPLANATION: Declaring UI elements globally so they can be referenced inside our button click listeners.
-    MaterialButton btnLogout, btnClearHistory, btnTestNotification, btnSettingsBack;
+    MaterialButton btnLogout, btnClearHistory, btnSettingsBack;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
