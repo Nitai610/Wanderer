@@ -51,6 +51,7 @@
             android:layout_marginHorizontal="32dp"
             android:layout_marginTop="40dp"
             android:hint="Email"
+            android:textColorHint="#212121"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
@@ -68,7 +69,7 @@
                 android:inputType="textEmailAddress"
                 android:padding="16dp"
                 android:textColor="#212121"
-                android:textColorHint="#757575" />
+                android:textColorHint="#212121" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Password Input -->
@@ -80,6 +81,7 @@
             android:layout_marginHorizontal="32dp"
             android:layout_marginTop="16dp"
             android:hint="Password"
+            android:textColorHint="#212121"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
@@ -98,7 +100,7 @@
                 android:inputType="textPassword"
                 android:padding="16dp"
                 android:textColor="#212121"
-                android:textColorHint="#757575" />
+                android:textColorHint="#212121" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Confirm Password Input -->
@@ -110,6 +112,7 @@
             android:layout_marginHorizontal="32dp"
             android:layout_marginTop="16dp"
             android:hint="Confirm Password"
+            android:textColorHint="#212121"
             app:boxCornerRadiusBottomEnd="12dp"
             app:boxCornerRadiusBottomStart="12dp"
             app:boxCornerRadiusTopEnd="12dp"
@@ -128,7 +131,7 @@
                 android:inputType="textPassword"
                 android:padding="16dp"
                 android:textColor="#212121"
-                android:textColorHint="#757575" />
+                android:textColorHint="#212121" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <!-- Blue Register Button -->
@@ -139,6 +142,7 @@
             android:layout_marginHorizontal="32dp"
             android:layout_marginTop="40dp"
             android:text="REGISTER"
+            android:textColor="#FFFF"
             android:textSize="18sp"
             android:textStyle="bold"
             app:backgroundTint="#1976D2"
