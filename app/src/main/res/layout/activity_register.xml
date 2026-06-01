@@ -87,6 +87,7 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
             app:passwordToggleEnabled="true"
+            app:passwordToggleTint="#57595B"
             app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -118,6 +119,7 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
             app:passwordToggleEnabled="true"
+            app:passwordToggleTint="#57595B"
             app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -151,34 +153,33 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/confirmPasswordLayout" />
 
+
+
         <!-- "Already have an account?" Section -->
-        <LinearLayout
-            android:id="@+id/layoutLoginLink"
+        <TextView
+            android:id="@+id/textView"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
-            android:layout_marginBottom="32dp"
-            android:orientation="horizontal"
-            app:layout_constraintBottom_toTopOf="@id/btnBack"
+            android:layout_marginTop="68dp"
+            android:text="Already have an account? "
+            android:textColor="#212121"
+            android:textStyle="bold"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnRegisterSubmit"
-            app:layout_constraintVertical_bias="1.0">
+            app:layout_constraintTop_toBottomOf="@+id/btnRegisterSubmit" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Already have an account? "
-                android:textColor="#757575" />
-
-            <TextView
-                android:id="@+id/tvLoginLink"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Log in"
-                android:textColor="#1976D2"
-                android:textStyle="bold" />
-        </LinearLayout>
+        <TextView
+            android:id="@+id/tvLoginLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Login"
+            android:textColor="#1976D2"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/btnBack"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView"
+            app:layout_constraintVertical_bias="0.0" />
 
         <!-- The Floating 'Pill' Go Back Button -->
         <com.google.android.material.button.MaterialButton

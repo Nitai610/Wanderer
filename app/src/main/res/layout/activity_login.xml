@@ -87,6 +87,7 @@
             app:boxCornerRadiusTopEnd="12dp"
             app:boxCornerRadiusTopStart="12dp"
             app:passwordToggleEnabled="true"
+            app:passwordToggleTint="#57595B"
             app:startIconDrawable="@android:drawable/ic_lock_idle_lock"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
@@ -125,37 +126,11 @@
             app:layout_constraintTop_toBottomOf="@+id/passwordInputLayout"
             app:layout_constraintVertical_bias="0.183" />
 
-        <LinearLayout
-            android:id="@+id/layoutRegister"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="40dp"
-            android:orientation="horizontal"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btnLogin">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Don't have an account? "
-                android:textColor="#757575" />
-
-            <TextView
-                android:id="@+id/tvRegisterLink"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Register"
-                android:textColor="#1976D2"
-                android:textStyle="bold" />
-
-        </LinearLayout>
-
         <TextView
             android:id="@+id/tvForgotPassword"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginBottom="60dp"
             android:text="Forgot Password?"
             android:textColor="#1976D2"
             android:textSize="14sp"
@@ -163,11 +138,35 @@
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/layoutRegister"
-            app:layout_constraintVertical_bias="0.049"
             tools:ignore="MissingConstraints" />
 
-        <!-- The Floating 'Pill' Go Back Button (Replaces the old top arrow) -->
+        <TextView
+            android:id="@+id/tvRegisterLink"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Register"
+            android:textColor="#1976D2"
+            android:textStyle="bold"
+            app:layout_constraintBottom_toTopOf="@+id/tvForgotPassword"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.498"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/tvregistertv"
+            app:layout_constraintVertical_bias="0.0" />
+
+        <TextView
+            android:id="@+id/tvregistertv"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="40dp"
+            android:text="Dont have account?"
+            android:textColor="#212121"
+            android:textStyle="bold"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.498"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/btnLogin" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
 </androidx.core.widget.NestedScrollView>
