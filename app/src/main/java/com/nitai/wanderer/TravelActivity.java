@@ -33,7 +33,6 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
 
     TextView tvLiveDistance, tvLiveTimer;
     MaterialButton btnStopWalk;
-    ImageButton btnCancelWalk;
 
     // --- THE RADIO RECEIVER (OBSERVER PATTERN) ---
     // EXPLANATION: If TrackingService is the radio tower broadcasting updates, this BroadcastReceiver is the antenna on your app's screen.
@@ -69,7 +68,6 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
         tvLiveDistance = findViewById(R.id.tvLiveDistance);
         tvLiveTimer = findViewById(R.id.tvLiveTimer);
         btnStopWalk = findViewById(R.id.btnStopWalk);
-        btnCancelWalk = findViewById(R.id.btnCancelWalk);
 
         // EXPLANATION: Finds the map box in your XML and starts downloading the Google Maps tiles asynchronously (in the background) so the screen doesn't freeze.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.mapFragment);
@@ -90,11 +88,6 @@ public class TravelActivity extends AppCompatActivity implements OnMapReadyCallb
             finish();
         });
 
-        btnCancelWalk.setOnClickListener(v -> {
-            // EXPLANATION: Kills the background tracker entirely and closes this screen, throwing away the progress.
-            stopTrackingService();
-            finish();
-        });
     }
 
     private void startTrackingService() {

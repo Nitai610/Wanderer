@@ -25,20 +25,8 @@ tools:context=".TravelActivity">
     app:layout_constraintTop_toTopOf="parent" />
 
 <!-- Back/Cancel Button -->
-<ImageButton
-    android:id="@+id/btnCancelWalk"
-    android:layout_width="48dp"
-    android:layout_height="48dp"
-    android:layout_marginStart="16dp"
-    android:layout_marginTop="16dp"
-    android:contentDescription="Cancel Walk"
-    android:elevation="4dp"
-    app:layout_constraintStart_toStartOf="parent"
-    app:layout_constraintTop_toTopOf="parent"
-    app:srcCompat="@android:drawable/ic_menu_close_clear_cancel"
-    app:tint="#333333" />
 
-<!-- Floating Bottom Stats Card -->
+    <!-- Floating Bottom Stats Card -->
 <com.google.android.material.card.MaterialCardView
     android:id="@+id/cardLiveStats"
     android:layout_width="match_parent"
