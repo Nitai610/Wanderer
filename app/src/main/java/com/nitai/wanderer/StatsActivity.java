@@ -1,4 +1,4 @@
-package com.nitai.wanderer; // Keep your package name!
+package com.nitai.wanderer;
 
 import android.content.Intent;
 import android.os.Bundle;

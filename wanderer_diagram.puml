@@ -1,0 +1,230 @@
+@startuml
+class com.nitai.wanderer.ProfileActivity {
+~ TextView tvProfileUsername
+~ TextView tvProfileTotalTime
+~ MaterialButton btnProfileBack
+# void onCreate(Bundle)
+- void loadProfileData()
+# void onResume()
+- void showEditUsernameDialog()
+}
+
+
+class com.nitai.wanderer.LeaderboardAdapter {
+- ArrayList<LeaderboardUser> userList
++ LeaderboardViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(LeaderboardViewHolder,int)
++ int getItemCount()
+}
+
+
+class com.nitai.wanderer.LeaderboardAdapter$LeaderboardViewHolder {
+~ TextView tvRank
+}
+
+class com.nitai.wanderer.LeaderboardUser {
++ String username
++ float totalDistance
++ int totalTimeSeconds
++ void addDistance(String)
++ void addTime(String)
++ String getFormattedTime()
++ int compareTo(LeaderboardUser)
+}
+
+
+class com.nitai.wanderer.TrackingService {
++ {static} ArrayList<LatLng> livePath
++ {static} float liveDistanceInMeters
++ {static} int liveSecondsElapsed
++ {static} boolean isServiceRunning
+- FusedLocationProviderClient fusedLocationClient
+- LocationCallback locationCallback
+- Location lastKnownLocation
+- Handler timerHandler
++ void onCreate()
++ int onStartCommand(Intent,int,int)
+- void startTimer()
+- void setupLocationCallback()
+- void sendUpdateBroadcast()
+- void startLocationUpdates()
+- void startForegroundWithNotification()
++ void onDestroy()
++ IBinder onBind(Intent)
+}
+
+
+class com.nitai.wanderer.LoginActivity {
+~ MaterialButton btnLogin
+~ TextView tvRegisterLink
+~ TextInputEditText etUsername
+- FirebaseAuth mAuth
+# void onCreate(Bundle)
+}
+
+
+class com.nitai.wanderer.SettingsActivity {
+~ MaterialButton btnLogout
+# void onCreate(Bundle)
+}
+
+
+class com.nitai.wanderer.SummaryActivity {
+~ TextView tvFinalDistance
+~ MaterialButton btnSaveWalk
+~ LinearLayout layoutActiveButtons
+~ String finalDistance
+~ String finalTime
+~ ArrayList<LatLng> walkPath
+# void onCreate(Bundle)
+- void saveWalkToFirestore()
+- void drawRouteOnMap(GoogleMap)
+- void resetTrackingData()
+}
+
+
+class com.nitai.wanderer.LeaderboardActivity {
+~ RecyclerView rvLeaderboard
+~ MaterialButton btnLeaderboardBack
+~ LeaderboardAdapter adapter
+~ ArrayList<LeaderboardUser> userList
+# void onCreate(Bundle)
+- void fetchLeaderboardData()
+}
+
+
+class com.nitai.wanderer.ExampleUnitTest {
++ void addition_isCorrect()
+}
+
+class com.nitai.wanderer.Walk {
++ String username
++ String distance
++ String time
++ String date
++ List<HashMap<String,Double>> path
++ {static} ArrayList<Walk> walkHistory
++ String getUsername()
++ String getDate()
++ String getDistance()
++ String getTime()
++ ArrayList<LatLng> getGooglePath()
++ {static} float calculateAllTimeDistance()
++ {static} float calculateMonthlyDistance()
++ {static} float calculateWeeklyDistance()
+- {static} int parseTimeToSeconds(String)
+- {static} String formatSecondsToTimeString(int)
++ {static} String calculateAllTimeDuration()
++ {static} String calculateMonthlyDuration()
++ {static} String calculateWeeklyDuration()
++ {static} float calculateDailyDistance()
+}
+
+
+class com.nitai.wanderer.WalkAdapter {
+- ArrayList<Walk> walks
+- OnWalkDeleteListener deleteListener
++ WalkViewHolder onCreateViewHolder(ViewGroup,int)
++ void onBindViewHolder(WalkViewHolder,int)
+- void deleteWalkPermanently(int,Context)
++ int getItemCount()
+}
+
+
+interface com.nitai.wanderer.WalkAdapter$OnWalkDeleteListener {
+~ void onWalkDeleted()
+}
+
+class com.nitai.wanderer.WalkAdapter$WalkViewHolder {
+~ TextView tvWalkDate
+~ ImageButton btnDeleteWalk
+}
+
+class com.nitai.wanderer.RegisterActivity {
+~ MaterialButton btnRegisterSubmit
+~ TextView tvLoginLink
+~ TextInputEditText etRegisterUsername
+- FirebaseAuth mAuth
+# void onCreate(Bundle)
+}
+
+
+class com.nitai.wanderer.ExampleInstrumentedTest {
++ void useAppContext()
+}
+
+class com.nitai.wanderer.JournalActivity {
+~ LinearLayout layoutEmptyState
+~ MaterialButton btnEmptyStartWalk
+~ RecyclerView recyclerViewJournal
+~ WalkAdapter adapter
+# void onCreate(Bundle)
+- void fetchWalksFromCloud()
+- void checkIfEmpty()
+}
+
+
+class com.nitai.wanderer.TravelActivity {
+- GoogleMap mMap
+- {static} int LOCATION_PERMISSION_REQUEST_CODE
+~ TextView tvLiveDistance
+~ MaterialButton btnStopWalk
+- BroadcastReceiver uiUpdateReceiver
+# void onCreate(Bundle)
+- void startTrackingService()
+- void updateScreenFromService()
++ void onMapReady(GoogleMap)
+- void checkPermissionsAndStart()
+- void stopTrackingService()
+# void onResume()
+# void onPause()
+}
+
+
+class com.nitai.wanderer.StatsActivity {
+~ TextView tvStatsWeekly
+~ TextView tvStatsWeeklyTime
+~ MaterialButton btnStatsBack
+# void onCreate(Bundle)
+# void onResume()
+- void loadStatsFromFirebase()
+- void updateStatsUI()
+}
+
+
+class com.nitai.wanderer.MainActivity {
+- {static} int LOCATION_PERMISSION_CODE
+~ ImageButton btnProfile
+~ View btnStartWalk
+~ TextView tvWeeklyDistanceMain
+# void onCreate(Bundle)
+- void startTravelActivity()
++ void onRequestPermissionsResult(int,String[],int[])
+# void onResume()
+- void updateWeeklyDistanceUI()
+}
+
+
+
+
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.ProfileActivity
+com.nitai.wanderer.Adapter <|-- com.nitai.wanderer.LeaderboardAdapter
+com.nitai.wanderer.LeaderboardAdapter +.. com.nitai.wanderer.LeaderboardAdapter$LeaderboardViewHolder
+com.nitai.wanderer.ViewHolder <|-- com.nitai.wanderer.LeaderboardAdapter$LeaderboardViewHolder
+com.nitai.wanderer.Comparable <|.. com.nitai.wanderer.LeaderboardUser
+android.app.Service <|-- com.nitai.wanderer.TrackingService
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.LoginActivity
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.SettingsActivity
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.SummaryActivity
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.LeaderboardActivity
+com.nitai.wanderer.Adapter <|-- com.nitai.wanderer.WalkAdapter
+com.nitai.wanderer.WalkAdapter +.. com.nitai.wanderer.WalkAdapter$OnWalkDeleteListener
+com.nitai.wanderer.WalkAdapter +.. com.nitai.wanderer.WalkAdapter$WalkViewHolder
+com.nitai.wanderer.ViewHolder <|-- com.nitai.wanderer.WalkAdapter$WalkViewHolder
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.RegisterActivity
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.JournalActivity
+com.google.android.gms.maps.OnMapReadyCallback <|.. com.nitai.wanderer.TravelActivity
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.TravelActivity
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.StatsActivity
+androidx.appcompat.app.AppCompatActivity <|-- com.nitai.wanderer.MainActivity
+@enduml
