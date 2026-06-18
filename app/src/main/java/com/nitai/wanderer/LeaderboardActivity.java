@@ -59,60 +59,71 @@ public class LeaderboardActivity extends AppCompatActivity {
 
         btnLeaderboardBack.setOnClickListener(v -> finish()); // EXPLANATION: Closes the leaderboard and returns to the profile.
     }
-
     private void fetchLeaderboardData() {
         FirebaseFirestore db = FirebaseFirestore.getInstance();
 
-        // EXPLANATION: THIS IS A CRITICAL EXAM CONCEPT!
-        // Previously, you used db.collection("users").document(email).collection("walks") to get ONE user's data.
-        // .collectionGroup("walks") is a special Firestore query that searches the ENTIRE database and pulls every single document that lives inside ANY folder named "walks", regardless of which user it belongs to!
+        // Capture the current live system month and year for filtering
+        java.util.Calendar now = java.util.Calendar.getInstance();
+        int currentMonth = now.get(java.util.Calendar.MONTH); // 0 = January, 11 = December
+        int currentYear = now.get(java.util.Calendar.YEAR);
+
+        // Formatter to read the string dates stored in your Walk objects
+        java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault());
+
         db.collectionGroup("walks").get().addOnSuccessListener(queryDocumentSnapshots -> {
 
-            // We now group walks together by Username!
-            // EXPLANATION: A HashMap is perfect here. The "Key" is the Username (String), and the "Value" is the total stats for that user (LeaderboardUser object).
-            // It allows us to easily check: "Have we seen a walk from Nitai yet?" If yes, add to his total. If no, create a new slot for him.
             HashMap<String, LeaderboardUser> userMap = new HashMap<>();
 
             for (QueryDocumentSnapshot document : queryDocumentSnapshots) {
-                // EXPLANATION: Automatically converts the JSON cloud data into your Java Walk object.
                 Walk walk = document.toObject(Walk.class);
 
-                // Read the username directly from the saved Walk
-                String savedUsername = walk.username;
+                // --- NEW: MONTHLY FILTER LOGIC ---
+                // If the walk doesn't have a date or fails the month check, skip it!
+                if (walk.date == null || walk.date.isEmpty()) {
+                    continue;
+                }
 
-                // Safety check in case it's a very old walk before we added the username feature
-                // EXPLANATION: Excellent defensive programming. If you test the app with old database entries that don't have a username saved, this prevents the app from crashing by assigning a default name.
+                try {
+                    java.util.Date walkDate = sdf.parse(walk.date);
+                    java.util.Calendar walkCal = java.util.Calendar.getInstance();
+                    walkCal.setTime(walkDate);
+
+                    // If the walk's month or year doesn't match this current month, skip it
+                    if (walkCal.get(java.util.Calendar.MONTH) != currentMonth ||
+                            walkCal.get(java.util.Calendar.YEAR) != currentYear) {
+                        continue; // Moves instantly to the next walk in the loop
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    continue; // Skip if the date format is corrupted
+                }
+                // ----------------------------------
+
+                // Read the username safely
+                String savedUsername = walk.username;
                 if (savedUsername == null || savedUsername.isEmpty()) {
                     savedUsername = "Unknown Explorer";
                 }
 
-                // If this is the first time we've seen this user, add them to our Map
-                // EXPLANATION: .containsKey() checks if this username already has a "bucket" in our HashMap. If not, we create a fresh LeaderboardUser object for them.
+                // Grouping and adding stats (Same as before)
                 if (!userMap.containsKey(savedUsername)) {
                     userMap.put(savedUsername, new LeaderboardUser(savedUsername));
                 }
 
-                // Add the walk's distance and time to the user's running total
-                // EXPLANATION: .get() pulls the user's specific "bucket" out of the HashMap.
                 LeaderboardUser user = userMap.get(savedUsername);
-
-                // EXPLANATION: We take the distance/time from this specific walk and add it to their grand total.
                 user.addDistance(walk.distance);
                 user.addTime(walk.time);
             }
 
-            // EXPLANATION: Now that we have calculated all the totals, we need to move them from the HashMap back into a standard ArrayList so the RecyclerView can understand them.
-            userList.clear(); // Empty the old visual list
-            userList.addAll(userMap.values()); // Dump all the calculated LeaderboardUser objects into the list
+            // Update UI list
+            userList.clear();
+            userList.addAll(userMap.values());
 
-            // EXPLANATION: Sorts the list. For this to work without errors, your 'LeaderboardUser' class MUST implement the 'Comparable' interface to teach Java exactly how to rank the users (e.g., highest distance wins).
+            // Sorts via your Comparable interface (highest distance, tie-broken by fastest time)
             Collections.sort(userList);
-
-            // EXPLANATION: Tells the visual list to redraw itself now that the data has been sorted and calculated.
             adapter.notifyDataSetChanged();
 
         }).addOnFailureListener(e -> {
-            // EXPLANATION: Standard error handling if the device has no internet connection.
             Toast.makeText(LeaderboardActivity.this, "Failed to load leaderboard.", Toast.LENGTH_SHORT).show();
         });
     }
